@@ -22,6 +22,9 @@ if (channel) {
       targetElement.textContent = message.target || "等待下一句…";
       sourceElement.textContent = message.source || "";
       sourceElement.classList.toggle("hidden", !message.showSource || !message.source);
+      if (Number.isFinite(message.captionScale)) {
+        document.documentElement.style.setProperty("--caption-scale", String(message.captionScale));
+      }
     }
     if (message.type === "status") updateStatus(message.status);
   });

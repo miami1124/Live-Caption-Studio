@@ -549,12 +549,6 @@ body::before {
   pointer-events: none;
 }
 
-.stage-view:fullscreen:not(.controls-visible) .stage-dock {
-  opacity: 0;
-  transform: translate(-50%, 14px);
-  pointer-events: none;
-}
-
 .stage-view:fullscreen:not(.controls-visible):not(.reserve-caption) .caption-layer {
   bottom: clamp(1.5rem, 3.5vh, 3rem);
 }

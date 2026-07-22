@@ -4,7 +4,7 @@ const elements = Object.fromEntries(
     "connectionBlock", "keyOrb", "keyStatusTitle", "keyStatusText", "editKeyBtn", "keyForm",
     "apiKeyInput", "micSelect", "micTestBtn", "setupMeter", "enterStageBtn", "setupError",
     "slideImage", "slideLoader", "liveStatus", "settingsBtn", "sourceCaption", "targetCaption",
-    "stageDock", "translateBtn", "prevBtn", "nextBtn", "currentPage", "totalPages", "zhToggleBtn",
+    "translateBtn", "zhToggleBtn",
     "captionWindowBtn", "fullscreenBtn", "settingsDrawer", "closeSettingsBtn", "drawerBackdrop",
     "stageLanguageSelect", "stageMicSelect", "smallerBtn", "largerBtn", "captionSizeText",
     "overlayToggle", "openCaptionPageBtn", "replacePdfBtn", "leaveStageBtn", "toastStack", "stageSurface",
@@ -148,7 +148,6 @@ async function uploadPdf(file) {
     elements.dropZone.querySelector(".drop-main").textContent = data.filename;
     updateProgress();
     if (!elements.stageView.classList.contains("hidden")) {
-      elements.totalPages.textContent = data.pageCount;
       await showPage(1);
     }
   } catch (error) {
@@ -250,8 +249,6 @@ async function showPage(pageNumber) {
   if (!state.deck) return;
   const target = Math.max(1, Math.min(state.deck.pageCount, pageNumber));
   state.page = target;
-  elements.currentPage.textContent = target;
-  elements.totalPages.textContent = state.deck.pageCount;
   elements.slideLoader.classList.remove("hidden");
   const imageUrl = `/api/deck/${state.deck.deckId}/page/${target}.png`;
   const image = new Image();
@@ -296,7 +293,7 @@ function updateCaptionViews() {
     state.pipSource.textContent = state.currentSource;
     state.pipSource.classList.toggle("hidden", !state.showSource || !state.currentSource);
   }
-  broadcast({ type: "caption", target: state.currentTarget, source: state.currentSource, showSource: state.showSource });
+  broadcast({ type: "caption", target: state.currentTarget, source: state.currentSource, showSource: state.showSource, captionScale: state.captionScale });
 }
 
 function addTargetText(text) {
@@ -433,7 +430,6 @@ function enterStage() {
   if (state.micTestStream) toggleMicTest();
   elements.setupView.classList.add("hidden");
   elements.stageView.classList.remove("hidden");
-  elements.totalPages.textContent = state.deck.pageCount;
   applyStagePreferences();
   showPage(1);
 }
@@ -448,6 +444,7 @@ function leaveStage() {
 
 function openSettings() {
   elements.stageView.classList.add("controls-visible");
+  elements.settingsDrawer.removeAttribute("inert");
   elements.settingsDrawer.classList.add("open");
   elements.settingsDrawer.setAttribute("aria-hidden", "false");
   elements.drawerBackdrop.classList.remove("hidden");
@@ -456,6 +453,8 @@ function openSettings() {
 function closeSettings() {
   elements.stageView.classList.remove("controls-visible");
   elements.settingsDrawer.classList.remove("open");
+  if (elements.settingsDrawer.contains(document.activeElement)) document.activeElement.blur();
+  elements.settingsDrawer.setAttribute("inert", "");
   elements.settingsDrawer.setAttribute("aria-hidden", "true");
   elements.drawerBackdrop.classList.add("hidden");
 }
@@ -466,11 +465,12 @@ function toggleSettings() {
 }
 
 function applyStagePreferences() {
-  state.captionScale = Math.max(.65, Math.min(1.5, state.captionScale));
+  state.captionScale = Number.isFinite(state.captionScale) ? Math.max(.65, Math.min(1.5, state.captionScale)) : 1;
   document.documentElement.style.setProperty("--caption-scale", String(state.captionScale));
+  if (state.pipWindow) state.pipWindow.document.documentElement.style.setProperty("--caption-scale", String(state.captionScale));
   elements.captionSizeText.textContent = `${Math.round(state.captionScale * 100)}%`;
-  elements.zhToggleBtn.classList.toggle("active", state.showSource);
-  elements.zhToggleBtn.setAttribute("aria-pressed", String(state.showSource));
+  elements.zhToggleBtn.classList.toggle("on", state.showSource);
+  elements.zhToggleBtn.setAttribute("aria-checked", String(state.showSource));
   elements.overlayToggle.classList.toggle("on", state.overlay);
   elements.overlayToggle.setAttribute("aria-checked", String(state.overlay));
   elements.stageView.classList.toggle("reserve-caption", !state.overlay);
@@ -525,6 +525,7 @@ async function toggleCaptionWindow() {
       }
     }
     pip.document.body.className = "caption-page";
+    pip.document.documentElement.style.setProperty("--caption-scale", String(state.captionScale));
     const main = pip.document.createElement("main");
     main.className = "caption-page-main";
     state.pipSource = pip.document.createElement("div");
@@ -601,8 +602,6 @@ elements.stageLanguageSelect.addEventListener("change", (event) => {
   }
 });
 elements.translateBtn.addEventListener("click", () => state.running ? stopTranslation() : startTranslation());
-elements.prevBtn.addEventListener("click", () => showPage(state.page - 1));
-elements.nextBtn.addEventListener("click", () => showPage(state.page + 1));
 elements.zhToggleBtn.addEventListener("click", toggleSource);
 elements.captionWindowBtn.addEventListener("click", toggleCaptionWindow);
 elements.fullscreenBtn.addEventListener("click", toggleFullscreen);
@@ -632,6 +631,16 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     return;
   }
+  if (["+", "="].includes(event.key) || event.code === "NumpadAdd") {
+    changeCaptionScale(.08);
+    event.preventDefault();
+    return;
+  }
+  if (["-", "_"].includes(event.key) || event.code === "NumpadSubtract") {
+    changeCaptionScale(-.08);
+    event.preventDefault();
+    return;
+  }
   if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
   if (key === "m") state.running ? stopTranslation() : startTranslation();
   else if (key === "c") toggleSource();
@@ -639,8 +648,6 @@ document.addEventListener("keydown", (event) => {
   else if (key === "f") toggleFullscreen();
   else if (["arrowright", "arrowdown", "pagedown", " "].includes(key)) showPage(state.page + 1);
   else if (["arrowleft", "arrowup", "pageup"].includes(key)) showPage(state.page - 1);
-  else if (["+", "="].includes(event.key)) changeCaptionScale(.08);
-  else if (["-", "_"].includes(event.key)) changeCaptionScale(-.08);
   else return;
   event.preventDefault();
 });
