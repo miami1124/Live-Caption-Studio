@@ -386,7 +386,9 @@ async function startTranslation() {
     connectWebSocket();
     updateCaptionViews();
   } catch (error) {
-    toast(`無法啟動麥克風：${error.message}`, "error");
+    const message = `無法啟動麥克風：${error.message}`;
+    toast(message, "error");
+    setLiveStatus("error", message);
     stopTranslation(false, true);
   }
 }

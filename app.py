@@ -38,6 +38,10 @@ sock = Sock(app)
 
 MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-live-translate-preview")
 PORT = int(os.getenv("PORT", "5090"))
+ALLOWED_ORIGINS = {
+    f"http://127.0.0.1:{PORT}",
+    f"http://localhost:{PORT}",
+}
 SUPPORTED_LANGUAGES = {
     "en": "English",
     "ja": "日本語",
@@ -68,6 +72,12 @@ def _get_api_key() -> tuple[str, str]:
     if env_key:
         return env_key, "environment"
     return "", "missing"
+
+
+def _origin_is_allowed() -> bool:
+    """阻擋網頁從其他來源偷連使用者的 localhost 服務。"""
+    origin = request.headers.get("Origin", "").rstrip("/")
+    return not origin or origin in ALLOWED_ORIGINS
 
 
 def build_setup(target_language: str) -> dict[str, object]:
@@ -230,6 +240,16 @@ def add_security_headers(response):
     return response
 
 
+@app.before_request
+def reject_cross_site_mutations():
+    if (
+        request.path.startswith("/api/")
+        and request.method not in {"GET", "HEAD", "OPTIONS"}
+        and not _origin_is_allowed()
+    ):
+        return jsonify({"ok": False, "message": "已拒絕其他網站連線到本機字幕工具。"}), 403
+
+
 @app.get("/captions")
 def captions():
     return render_template("captions.html")
@@ -377,6 +397,12 @@ def file_too_large(_error):
 
 @sock.route("/ws")
 def websocket_handler(browser_ws):
+    if not _origin_is_allowed():
+        try:
+            browser_ws.close()
+        except Exception:
+            pass
+        return
     language = request.args.get("lang", "en")
     if language not in SUPPORTED_LANGUAGES:
         language = "en"

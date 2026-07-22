@@ -19,6 +19,7 @@ REQUIREMENTS = ROOT / "requirements.txt"
 READY_MARKER = VENV_DIR / ".requirements-ready"
 PORT = int(os.getenv("PORT", "5090"))
 URL = f"http://127.0.0.1:{PORT}"
+OPEN_BROWSER = os.getenv("NO_BROWSER", "").strip().lower() not in {"1", "true", "yes"}
 
 
 def venv_python() -> Path:
@@ -76,8 +77,11 @@ def main() -> int:
             process.terminate()
         return 1
 
-    webbrowser.open(URL)
-    print("\n瀏覽器已開啟。要結束程式，請關閉此視窗或按 Ctrl+C。\n")
+    if OPEN_BROWSER:
+        webbrowser.open(URL)
+        print("\n瀏覽器已開啟。要結束程式，請關閉此視窗或按 Ctrl+C。\n")
+    else:
+        print("\n測試模式：未自動開啟瀏覽器。按 Ctrl+C 可結束程式。\n")
     try:
         return process.wait()
     except KeyboardInterrupt:

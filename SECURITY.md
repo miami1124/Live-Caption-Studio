@@ -5,6 +5,7 @@
 - 不要把 Gemini API key 寫進程式碼、Issue、截圖或 commit。
 - 若使用 `.env`，此檔案已由 `.gitignore` 排除。
 - 從啟動畫面輸入的 key 只保留在本次 Python 程序記憶體，關閉程式後即清除。
+- 本機服務會檢查 HTTP Origin 與 Host，拒絕其他網站跨站連線並偷用已載入的 key。
 - 如果懷疑 key 外洩，請先建立並驗證新 key，再停用舊 key，並檢查 Google AI Studio 的使用紀錄。
 
 ## 回報弱點
