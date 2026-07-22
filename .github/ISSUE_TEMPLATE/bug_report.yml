@@ -1,0 +1,38 @@
+name: 問題回報
+description: 回報啟動、PDF、麥克風或字幕問題
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: 作業系統
+      options: [Windows, macOS, Linux]
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: 瀏覽器與版本
+      placeholder: 例如 Chrome 140
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 發生什麼事？
+      description: 請描述操作步驟、預期結果與實際結果。不要貼出 API key。
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: 錯誤訊息
+      description: 可以貼終端機錯誤，但請先確認內容沒有 API key 或私人資料。
+  - type: checkboxes
+    id: secret-check
+    attributes:
+      label: 資安確認
+      options:
+        - label: 我已確認回報內容沒有 Gemini API key、私人 PDF 或其他敏感資料。
+          required: true
