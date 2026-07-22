@@ -8,6 +8,7 @@ const elements = Object.fromEntries(
     "captionWindowBtn", "fullscreenBtn", "settingsDrawer", "closeSettingsBtn", "drawerBackdrop",
     "stageLanguageSelect", "stageMicSelect", "smallerBtn", "largerBtn", "captionSizeText",
     "overlayToggle", "openCaptionPageBtn", "replacePdfBtn", "leaveStageBtn", "toastStack", "stageSurface",
+    "pdfReadyItem", "languageReadyItem", "languageReadyText", "keyReadyItem",
   ].map((id) => [id, document.getElementById(id)])
 );
 
@@ -65,6 +66,14 @@ function updateProgress() {
   elements.progressText.textContent = `${count} / 3 完成`;
   elements.pdfBlock.classList.toggle("complete", Boolean(state.deck));
   elements.connectionBlock.classList.toggle("complete", state.hasApiKey);
+  elements.pdfReadyItem.classList.toggle("ready", Boolean(state.deck));
+  elements.pdfReadyItem.querySelector("small").textContent = state.deck
+    ? `${state.deck.filename} · ${state.deck.pageCount} 頁`
+    : "尚未選擇檔案";
+  elements.keyReadyItem.classList.toggle("ready", state.hasApiKey);
+  elements.keyReadyItem.querySelector("small").textContent = state.hasApiKey
+    ? (state.apiKeySource === "environment" ? "已從 .env 讀取" : "本次執行期間使用")
+    : "尚未設定";
   elements.enterStageBtn.disabled = !state.deck || !state.hasApiKey;
 }
 
@@ -108,6 +117,8 @@ function selectLanguage(language) {
     button.setAttribute("aria-checked", String(selected));
   });
   elements.stageLanguageSelect.value = state.language;
+  const nativeLabels = { en: "英文", ja: "日文", ko: "韓文" };
+  elements.languageReadyText.textContent = `${languageLabels[state.language]} · ${nativeLabels[state.language]}`;
 }
 
 async function uploadPdf(file) {
@@ -436,15 +447,22 @@ function leaveStage() {
 }
 
 function openSettings() {
+  elements.stageView.classList.add("controls-visible");
   elements.settingsDrawer.classList.add("open");
   elements.settingsDrawer.setAttribute("aria-hidden", "false");
   elements.drawerBackdrop.classList.remove("hidden");
 }
 
 function closeSettings() {
+  elements.stageView.classList.remove("controls-visible");
   elements.settingsDrawer.classList.remove("open");
   elements.settingsDrawer.setAttribute("aria-hidden", "true");
   elements.drawerBackdrop.classList.add("hidden");
+}
+
+function toggleSettings() {
+  if (elements.settingsDrawer.classList.contains("open")) closeSettings();
+  else openSettings();
 }
 
 function applyStagePreferences() {
@@ -602,13 +620,20 @@ elements.stageSurface.addEventListener("click", (event) => {
   else showPage(state.page + 1);
 });
 
-document.addEventListener("fullscreenchange", () => elements.fullscreenBtn.classList.toggle("active", Boolean(document.fullscreenElement)));
+document.addEventListener("fullscreenchange", () => {
+  elements.fullscreenBtn.classList.toggle("active", Boolean(document.fullscreenElement));
+  closeSettings();
+});
 document.addEventListener("keydown", (event) => {
   if (elements.stageView.classList.contains("hidden")) return;
-  if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
   const key = event.key.toLowerCase();
+  if (key === "s") {
+    toggleSettings();
+    event.preventDefault();
+    return;
+  }
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
   if (key === "m") state.running ? stopTranslation() : startTranslation();
-  else if (key === "s") elements.settingsDrawer.classList.contains("open") ? closeSettings() : openSettings();
   else if (key === "c") toggleSource();
   else if (key === "p") toggleCaptionWindow();
   else if (key === "f") toggleFullscreen();

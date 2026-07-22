@@ -8,6 +8,7 @@
   <title>Live Caption Studio｜簡報即時翻譯字幕</title>
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/setup.css') }}">
 </head>
 <body>
   <a class="skip-link" href="#mainContent">跳到主要內容</a>
@@ -15,56 +16,42 @@
   <main id="mainContent">
     <section class="setup-view" id="setupView" aria-labelledby="setupTitle">
       <header class="app-header">
-        <a class="brand" href="/" aria-label="Live Caption Studio 首頁">
-          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span>Live Caption Studio</span>
-        </a>
-        <div class="local-badge"><span></span>在你的電腦本機執行</div>
+        <div class="app-header-inner">
+          <a class="brand" href="/" aria-label="Live Caption Studio 首頁">
+            <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span>Live Caption Studio</span>
+          </a>
+          <div class="local-badge"><span></span>在你的電腦本機執行</div>
+        </div>
       </header>
 
       <div class="setup-layout">
-        <div class="intro-column">
-          <p class="eyebrow">中文簡報 · 即時多語字幕</p>
-          <h1 id="setupTitle">讓投影片，跟著你的聲音說另一種語言。</h1>
-          <p class="intro-copy">選擇 PDF、確認麥克風，接著開始報告。你的 PDF 不會離開這台電腦。</p>
-
-          <ol class="flow-list" aria-label="使用步驟">
-            <li class="active"><span>01</span><div><strong>準備簡報</strong><p>選擇 PDF 與字幕語言</p></div></li>
-            <li><span>02</span><div><strong>確認聲音</strong><p>測試麥克風輸入</p></div></li>
-            <li><span>03</span><div><strong>開始報告</strong><p>字幕會即時出現在投影片下方</p></div></li>
-          </ol>
-
-          <div class="privacy-note">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 6v5.2c0 4.5-2.7 7.8-7 9.3-4.3-1.5-7-4.8-7-9.3V6l7-2.5Z"/><path d="m9 12 2 2 4-5"/></svg>
-            <div><strong>資料怎麼流動？</strong><p>PDF 只在本機處理；開始翻譯後，麥克風音訊會傳送至 Google Gemini。</p></div>
-          </div>
-        </div>
-
-        <div class="setup-panel">
+        <section class="setup-panel" aria-labelledby="setupTitle">
           <div class="panel-heading">
-            <div><span class="step-label">準備工作</span><h2>開始前確認三件事</h2></div>
-            <span class="progress-text" id="progressText">0 / 3 完成</span>
+            <div>
+              <p class="eyebrow">中文簡報 · 即時多語字幕</p>
+              <h1 id="setupTitle">上傳 PDF，開始即時翻譯簡報</h1>
+              <p class="intro-copy">說中文，畫面即時顯示英文、日文或韓文字幕。</p>
+            </div>
           </div>
 
-          <section class="setup-block" id="pdfBlock">
-            <div class="block-number">1</div>
+          <section class="setup-block upload-block" id="pdfBlock">
             <div class="block-content">
-              <div class="block-title-row"><div><h3>選擇 PDF 簡報</h3><p>最多 50 MB、200 頁</p></div><span class="check-mark" aria-hidden="true">✓</span></div>
+              <div class="block-title-row"><div><h2>選擇 PDF 簡報</h2><p>最多 50 MB、200 頁，檔案只在本機處理</p></div><span class="check-mark" aria-hidden="true">✓</span></div>
               <label class="drop-zone" id="dropZone" for="pdfInput">
                 <input id="pdfInput" type="file" accept="application/pdf,.pdf">
                 <span class="upload-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
                 </span>
-                <span class="drop-main">拖曳 PDF 到這裡，或按一下選檔</span>
+                <span class="drop-main">拖曳 PDF 到這裡，或按一下選擇檔案</span>
                 <span class="drop-meta" id="pdfMeta">檔案只會留在本機</span>
               </label>
             </div>
           </section>
 
           <section class="setup-block" id="languageBlock">
-            <div class="block-number">2</div>
             <div class="block-content">
-              <div class="block-title-row"><div><h3>字幕要翻成哪一種語言？</h3><p>你只需要說中文</p></div><span class="check-mark always" aria-hidden="true">✓</span></div>
+              <div class="block-title-row"><div><h2>字幕語言</h2><p>你只需要說中文</p></div><span class="check-mark always" aria-hidden="true">✓</span></div>
               <div class="language-options" role="radiogroup" aria-label="目標語言">
                 <button type="button" class="language-option selected" data-lang="en" role="radio" aria-checked="true"><span>EN</span><strong>English</strong><small>英文</small></button>
                 <button type="button" class="language-option" data-lang="ja" role="radio" aria-checked="false"><span>JA</span><strong>日本語</strong><small>日文</small></button>
@@ -74,9 +61,8 @@
           </section>
 
           <section class="setup-block" id="connectionBlock">
-            <div class="block-number">3</div>
             <div class="block-content">
-              <div class="block-title-row"><div><h3>連線與麥克風</h3><p>使用你自己的 Gemini API key</p></div><span class="check-mark" aria-hidden="true">✓</span></div>
+              <div class="block-title-row"><div><h2>連線與麥克風</h2><p>使用你自己的 Gemini API key</p></div><span class="check-mark" aria-hidden="true">✓</span></div>
 
               <div class="key-row" id="keyRow">
                 <div class="key-status"><span class="status-orb" id="keyOrb"></span><div><strong id="keyStatusTitle">檢查 API key 中</strong><small id="keyStatusText">請稍候</small></div></div>
@@ -103,7 +89,29 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
           </button>
           <p class="setup-error" id="setupError" role="alert"></p>
-        </div>
+        </section>
+
+        <aside class="readiness-panel" aria-labelledby="readinessTitle">
+          <div class="readiness-heading">
+            <h2 id="readinessTitle">開始前確認</h2>
+            <span class="progress-text" id="progressText">1 / 3 完成</span>
+          </div>
+          <div class="readiness-list">
+            <div class="readiness-item" id="pdfReadyItem"><span class="readiness-check">✓</span><div><strong>PDF 簡報</strong><small>尚未選擇檔案</small></div></div>
+            <div class="readiness-item ready" id="languageReadyItem"><span class="readiness-check">✓</span><div><strong>字幕語言</strong><small id="languageReadyText">English · 英文</small></div></div>
+            <div class="readiness-item" id="keyReadyItem"><span class="readiness-check">✓</span><div><strong>Gemini API key</strong><small>正在檢查</small></div></div>
+          </div>
+
+          <div class="privacy-note">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 6v5.2c0 4.5-2.7 7.8-7 9.3-4.3-1.5-7-4.8-7-9.3V6l7-2.5Z"/><path d="m9 12 2 2 4-5"/></svg>
+            <div><strong>資料怎麼流動？</strong><p>PDF 只在本機處理；開始翻譯後，麥克風音訊會傳送至 Google Gemini。</p></div>
+          </div>
+
+          <div class="shortcut-note">
+            <span>簡報快捷鍵</span>
+            <p><kbd>M</kbd> 翻譯　<kbd>S</kbd> 顯示設定　<kbd>F</kbd> 全螢幕</p>
+          </div>
+        </aside>
       </div>
     </section>
 
