@@ -250,11 +250,6 @@ def reject_cross_site_mutations():
         return jsonify({"ok": False, "message": "已拒絕其他網站連線到本機字幕工具。"}), 403
 
 
-@app.get("/captions")
-def captions():
-    return render_template("captions.html")
-
-
 @app.get("/api/health")
 def health():
     return jsonify({"ok": True, "model": MODEL})

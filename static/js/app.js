@@ -7,7 +7,7 @@ const elements = Object.fromEntries(
     "translateBtn", "zhToggleBtn",
     "captionWindowBtn", "fullscreenBtn", "settingsDrawer", "closeSettingsBtn", "drawerBackdrop",
     "stageLanguageSelect", "stageMicSelect", "smallerBtn", "largerBtn", "captionSizeText",
-    "overlayToggle", "openCaptionPageBtn", "replacePdfBtn", "leaveStageBtn", "toastStack", "stageSurface",
+    "fullscreenPrompt", "replacePdfBtn", "leaveStageBtn", "toastStack", "stageSurface",
     "pdfReadyItem", "languageReadyItem", "languageReadyText", "keyReadyItem",
   ].map((id) => [id, document.getElementById(id)])
 );
@@ -35,7 +35,6 @@ const state = {
   currentSource: "",
   showSource: localStorage.getItem("liveCaptionShowSource") === "true",
   captionScale: Number(localStorage.getItem("liveCaptionScale") || "1"),
-  overlay: localStorage.getItem("liveCaptionOverlay") !== "false",
   pipWindow: null,
   pipTarget: null,
   pipSource: null,
@@ -43,6 +42,8 @@ const state = {
 
 const captionChannel = "BroadcastChannel" in window ? new BroadcastChannel("gemini-live-caption") : null;
 const languageLabels = { en: "English", ja: "日本語", ko: "한국어" };
+// 電視字幕：一句話自然換行累積，塞滿約一頁（1-2 行）就整頁換新，像中研院實戰版一樣。
+const PAGE_CHARS = 90;
 
 function toast(message, type = "info") {
   const item = document.createElement("div");
@@ -193,8 +194,8 @@ async function loadMicrophones(requestPermission = false) {
 function microphoneConstraints() {
   return {
     audio: state.micId
-      ? { deviceId: { exact: state.micId }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
-      : { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      ? { deviceId: { exact: state.micId }, echoCancellation: true, noiseSuppression: true }
+      : { echoCancellation: true, noiseSuppression: true },
   };
 }
 
@@ -278,6 +279,29 @@ function setLiveStatus(status, label) {
   broadcast({ type: "status", status });
 }
 
+function captionFontSizes(scale, floating = false) {
+  const sourceViewport = floating ? 3.2 : 2;
+  const sourceMax = floating ? 2.3 : 2;
+  const targetViewport = floating ? 6 : 3.7;
+  const targetMax = floating ? 6 : 4.5;
+  return {
+    source: `clamp(${(1.1 * scale).toFixed(2)}rem, ${(sourceViewport * scale).toFixed(2)}vw, ${(sourceMax * scale).toFixed(2)}rem)`,
+    target: `clamp(${(2 * scale).toFixed(2)}rem, ${(targetViewport * scale).toFixed(2)}vw, ${(targetMax * scale).toFixed(2)}rem)`,
+  };
+}
+
+function applyCaptionFontSizes(target, source, floating = false) {
+  const sizes = captionFontSizes(state.captionScale, floating);
+  if (target) target.style.fontSize = sizes.target;
+  if (source) source.style.fontSize = sizes.source;
+}
+
+function swapCaption() {
+  elements.targetCaption.classList.remove("swap");
+  void elements.targetCaption.offsetWidth;
+  elements.targetCaption.classList.add("swap");
+}
+
 function updateCaptionViews() {
   elements.targetCaption.textContent = state.currentTarget || "";
   if (!state.currentTarget) {
@@ -286,7 +310,7 @@ function updateCaptionViews() {
     placeholder.textContent = state.running ? "正在聆聽中文…" : "按「開始翻譯」後，字幕會出現在這裡";
     elements.targetCaption.appendChild(placeholder);
   }
-  elements.sourceCaption.textContent = state.currentSource;
+  elements.sourceCaption.textContent = state.currentSource || "";
   elements.sourceCaption.classList.toggle("hidden", !state.showSource || !state.currentSource);
   if (state.pipTarget) state.pipTarget.textContent = state.currentTarget || "等待下一句…";
   if (state.pipSource) {
@@ -297,18 +321,16 @@ function updateCaptionViews() {
 }
 
 function addTargetText(text) {
-  const limit = state.language === "en" ? 105 : 58;
-  if (state.currentTarget.length + text.length > limit) state.currentTarget = "";
-  if (!state.currentTarget) {
-    elements.targetCaption.classList.remove("swap");
-    void elements.targetCaption.offsetWidth;
-    elements.targetCaption.classList.add("swap");
-  }
+  if (!text) return;
+  // 塞滿一頁就整頁換新，從新片段重顯示；新頁開頭帶淡入，像電視字幕一句句換。
+  if (state.currentTarget.length + text.length > PAGE_CHARS) state.currentTarget = "";
+  if (state.currentTarget === "") swapCaption();
   state.currentTarget += text;
   updateCaptionViews();
 }
 
 function addSourceText(text) {
+  if (!text) return;
   state.currentSource += text;
   if (state.currentSource.length > 180) state.currentSource = state.currentSource.slice(-180);
   updateCaptionViews();
@@ -371,7 +393,10 @@ async function startTranslation() {
   try {
     state.stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints());
     await loadMicrophones(false);
-    state.audioContext = new AudioContext();
+    // 照中研院實戰版：直接開 16kHz 的 AudioContext，瀏覽器自動把麥克風降頻到 16k，
+    // 音訊乾淨、不用手動重採樣（手動降頻容易產生失真雜音，反而讓 Gemini 聽不清）。
+    state.audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    if (state.audioContext.state === "suspended") await state.audioContext.resume();
     await state.audioContext.audioWorklet.addModule("/static/js/pcm-processor.js");
     const source = state.audioContext.createMediaStreamSource(state.stream);
     state.analyser = state.audioContext.createAnalyser();
@@ -382,6 +407,7 @@ async function startTranslation() {
     source.connect(state.analyser);
     source.connect(state.processor);
     state.processor.connect(silentGain).connect(state.audioContext.destination);
+    // 連續送：只要連線開著就把音訊送去 Gemini，跟中研院版一樣（不做靜音門檻）。
     state.processor.port.onmessage = (event) => {
       if (state.websocket?.readyState === WebSocket.OPEN) state.websocket.send(event.data);
     };
@@ -425,13 +451,18 @@ function stopTranslation(showIdle = true, preserveStatus = false) {
   updateCaptionViews();
 }
 
-function enterStage() {
+async function enterStage() {
   if (!state.deck || !state.hasApiKey) return;
   if (state.micTestStream) toggleMicTest();
   elements.setupView.classList.add("hidden");
   elements.stageView.classList.remove("hidden");
   applyStagePreferences();
   showPage(1);
+  try {
+    await elements.stageView.requestFullscreen();
+  } catch (_error) {
+    syncFullscreenUi();
+  }
 }
 
 function leaveStage() {
@@ -439,6 +470,7 @@ function leaveStage() {
   closeSettings();
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   elements.stageView.classList.add("hidden");
+  elements.fullscreenPrompt.classList.add("hidden");
   elements.setupView.classList.remove("hidden");
 }
 
@@ -466,14 +498,11 @@ function toggleSettings() {
 
 function applyStagePreferences() {
   state.captionScale = Number.isFinite(state.captionScale) ? Math.max(.65, Math.min(1.5, state.captionScale)) : 1;
-  document.documentElement.style.setProperty("--caption-scale", String(state.captionScale));
-  if (state.pipWindow) state.pipWindow.document.documentElement.style.setProperty("--caption-scale", String(state.captionScale));
+  applyCaptionFontSizes(elements.targetCaption, elements.sourceCaption);
+  applyCaptionFontSizes(state.pipTarget, state.pipSource, true);
   elements.captionSizeText.textContent = `${Math.round(state.captionScale * 100)}%`;
   elements.zhToggleBtn.classList.toggle("on", state.showSource);
   elements.zhToggleBtn.setAttribute("aria-checked", String(state.showSource));
-  elements.overlayToggle.classList.toggle("on", state.overlay);
-  elements.overlayToggle.setAttribute("aria-checked", String(state.overlay));
-  elements.stageView.classList.toggle("reserve-caption", !state.overlay);
   selectLanguage(state.language);
   updateCaptionViews();
 }
@@ -490,25 +519,13 @@ function toggleSource() {
   applyStagePreferences();
 }
 
-function toggleOverlay() {
-  state.overlay = !state.overlay;
-  localStorage.setItem("liveCaptionOverlay", String(state.overlay));
-  applyStagePreferences();
-}
-
-function openCaptionPage() {
-  const popup = window.open("/captions", "live-caption-window", "popup,width=1100,height=220");
-  if (!popup) toast("瀏覽器封鎖了字幕視窗，請允許本站開啟彈出視窗。", "error");
-}
-
 async function toggleCaptionWindow() {
   if (state.pipWindow) {
     state.pipWindow.close();
     return;
   }
   if (!("documentPictureInPicture" in window)) {
-    openCaptionPage();
-    toast("此瀏覽器不支援最上層浮窗，已改開獨立字幕頁面。")
+    toast("此瀏覽器不支援字幕浮窗，請更新到 Chrome 116 以上或 Edge。", "error");
     return;
   }
 
@@ -525,7 +542,6 @@ async function toggleCaptionWindow() {
       }
     }
     pip.document.body.className = "caption-page";
-    pip.document.documentElement.style.setProperty("--caption-scale", String(state.captionScale));
     const main = pip.document.createElement("main");
     main.className = "caption-page-main";
     state.pipSource = pip.document.createElement("div");
@@ -534,6 +550,7 @@ async function toggleCaptionWindow() {
     state.pipTarget.className = "caption-page-target";
     main.append(state.pipSource, state.pipTarget);
     pip.document.body.appendChild(main);
+    applyCaptionFontSizes(state.pipTarget, state.pipSource, true);
     updateCaptionViews();
     elements.captionWindowBtn.classList.add("active");
     pip.addEventListener("pagehide", () => {
@@ -553,7 +570,17 @@ async function toggleFullscreen() {
     else await elements.stageView.requestFullscreen();
   } catch (error) {
     toast(`無法切換全螢幕：${error.message}`, "error");
+  } finally {
+    syncFullscreenUi();
   }
+}
+
+function syncFullscreenUi() {
+  const isFullscreen = Boolean(document.fullscreenElement);
+  elements.fullscreenBtn.classList.toggle("active", isFullscreen);
+  elements.fullscreenBtn.querySelector("span").textContent = isFullscreen ? "離開全螢幕" : "進入全螢幕";
+  const stageIsVisible = !elements.stageView.classList.contains("hidden");
+  elements.fullscreenPrompt.classList.toggle("hidden", isFullscreen || !stageIsVisible);
 }
 
 document.querySelectorAll(".language-option").forEach((button) => button.addEventListener("click", () => selectLanguage(button.dataset.lang)));
@@ -605,13 +632,12 @@ elements.translateBtn.addEventListener("click", () => state.running ? stopTransl
 elements.zhToggleBtn.addEventListener("click", toggleSource);
 elements.captionWindowBtn.addEventListener("click", toggleCaptionWindow);
 elements.fullscreenBtn.addEventListener("click", toggleFullscreen);
+elements.fullscreenPrompt.addEventListener("click", toggleFullscreen);
 elements.settingsBtn.addEventListener("click", openSettings);
 elements.closeSettingsBtn.addEventListener("click", closeSettings);
 elements.drawerBackdrop.addEventListener("click", closeSettings);
 elements.smallerBtn.addEventListener("click", () => changeCaptionScale(-.1));
 elements.largerBtn.addEventListener("click", () => changeCaptionScale(.1));
-elements.overlayToggle.addEventListener("click", toggleOverlay);
-elements.openCaptionPageBtn.addEventListener("click", openCaptionPage);
 elements.replacePdfBtn.addEventListener("click", () => { leaveStage(); setTimeout(() => elements.pdfInput.click(), 100); });
 elements.leaveStageBtn.addEventListener("click", leaveStage);
 elements.stageSurface.addEventListener("click", (event) => {
@@ -620,23 +646,26 @@ elements.stageSurface.addEventListener("click", (event) => {
 });
 
 document.addEventListener("fullscreenchange", () => {
-  elements.fullscreenBtn.classList.toggle("active", Boolean(document.fullscreenElement));
+  syncFullscreenUi();
   closeSettings();
 });
 document.addEventListener("keydown", (event) => {
   if (elements.stageView.classList.contains("hidden")) return;
+  if (event.isComposing) return;   // 中文輸入法組字中，別攔快捷鍵
   const key = event.key.toLowerCase();
   if (key === "s") {
     toggleSettings();
     event.preventDefault();
     return;
   }
-  if (["+", "="].includes(event.key) || event.code === "NumpadAdd") {
+  // 放大：半形 + = 、全形 ＋ ＝（中文輸入法）、數字鍵盤 +
+  if (["+", "=", "＋", "＝"].includes(event.key) || event.code === "NumpadAdd" || event.code === "Equal") {
     changeCaptionScale(.08);
     event.preventDefault();
     return;
   }
-  if (["-", "_"].includes(event.key) || event.code === "NumpadSubtract") {
+  // 縮小：半形 - _ 、全形 － ＿、數字鍵盤 -
+  if (["-", "_", "－", "＿"].includes(event.key) || event.code === "NumpadSubtract" || event.code === "Minus") {
     changeCaptionScale(-.08);
     event.preventDefault();
     return;
@@ -664,6 +693,10 @@ if (captionChannel) {
 window.addEventListener("beforeunload", () => {
   stopTranslation(false);
   stopMeter("micTestFrame", "micTestContext", "micTestStream", elements.setupMeter);
+});
+window.addEventListener("resize", () => {
+  applyCaptionFontSizes(elements.targetCaption, elements.sourceCaption);
+  updateCaptionViews();
 });
 navigator.mediaDevices?.addEventListener?.("devicechange", () => loadMicrophones(false));
 

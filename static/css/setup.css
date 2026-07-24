@@ -533,24 +533,10 @@ body::before {
   line-height: 1.7;
 }
 
-/* 全螢幕預設只保留投影片與字幕；按 S 才顯示控制。 */
+/* 報告舞台預設只保留投影片、字幕與右側控制把手。 */
 .stage-view {
   color-scheme: dark;
   color: var(--text);
-}
-
-.stage-header {
-  transition: opacity .2s ease, transform .2s ease;
-}
-
-.stage-view:fullscreen:not(.controls-visible) .stage-header {
-  opacity: 0;
-  transform: translateY(-14px);
-  pointer-events: none;
-}
-
-.stage-view:fullscreen:not(.controls-visible):not(.reserve-caption) .caption-layer {
-  bottom: clamp(1.5rem, 3.5vh, 3rem);
 }
 
 .stage-view:fullscreen:not(.controls-visible) .target-caption:has(.caption-placeholder) {

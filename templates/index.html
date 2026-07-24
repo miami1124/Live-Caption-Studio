@@ -85,7 +85,7 @@
           </section>
 
           <button type="button" class="primary-button" id="enterStageBtn" disabled>
-            <span>進入簡報</span>
+            <span>進入全螢幕簡報</span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
           </button>
           <p class="setup-error" id="setupError" role="alert"></p>
@@ -121,13 +121,13 @@
         <div class="slide-loader hidden" id="slideLoader"><span></span><p>正在準備投影片</p></div>
       </div>
 
-      <header class="stage-header">
-        <div class="stage-brand"><span class="brand-mark small" aria-hidden="true"><i></i><i></i><i></i></span><span>Live Caption Studio</span></div>
-        <div class="live-status" id="liveStatus"><span></span><strong>尚未開始</strong></div>
-        <button type="button" class="icon-button" id="settingsBtn" aria-label="開啟設定" title="設定（S）">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></svg>
-        </button>
-      </header>
+      <button type="button" class="stage-edge-handle" id="settingsBtn" aria-label="開啟控制面板" title="控制面板（S）">
+        <span aria-hidden="true">‹</span><strong>控制</strong>
+      </button>
+
+      <button type="button" class="fullscreen-prompt hidden" id="fullscreenPrompt">
+        <span>進入全螢幕簡報</span><kbd>F</kbd>
+      </button>
 
       <div class="caption-layer" id="captionLayer" aria-live="polite">
         <div class="source-caption hidden" id="sourceCaption"></div>
@@ -137,6 +137,7 @@
       <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true" inert>
         <div class="drawer-header"><div><span>簡報控制</span><h2>控制面板</h2></div><button type="button" class="icon-button" id="closeSettingsBtn" aria-label="關閉設定"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
         <div class="drawer-content">
+          <div class="live-status" id="liveStatus"><span></span><strong>尚未開始</strong></div>
           <button type="button" class="drawer-translate-button" id="translateBtn"><span class="translate-dot"></span><strong>開始翻譯</strong><kbd>M</kbd></button>
 
           <label class="field-label" for="stageLanguageSelect">字幕語言</label>
@@ -149,11 +150,8 @@
 
           <div class="setting-switch"><div><strong>顯示中文對照</strong><small>在翻譯字幕上方顯示中文辨識內容</small></div><button type="button" class="switch" id="zhToggleBtn" role="switch" aria-checked="false"><span></span></button></div>
 
-          <div class="setting-switch"><div><strong>字幕疊在投影片上</strong><small>關閉時會在畫面下方保留字幕空間</small></div><button type="button" class="switch on" id="overlayToggle" role="switch" aria-checked="true"><span></span></button></div>
-
           <button type="button" class="drawer-action" id="captionWindowBtn">開啟字幕浮窗 <span>↗</span></button>
-          <button type="button" class="drawer-action" id="openCaptionPageBtn">另開字幕分頁 <span>↗</span></button>
-          <button type="button" class="drawer-action" id="fullscreenBtn">切換全螢幕 <kbd>F</kbd></button>
+          <button type="button" class="drawer-action" id="fullscreenBtn"><span>切換全螢幕</span><kbd>F</kbd></button>
           <button type="button" class="drawer-action" id="replacePdfBtn">更換 PDF 簡報</button>
           <button type="button" class="drawer-action danger" id="leaveStageBtn">離開簡報</button>
         </div>

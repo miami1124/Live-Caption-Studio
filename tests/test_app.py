@@ -71,11 +71,19 @@ class LiveCaptionAppTest(unittest.TestCase):
         self.assertEqual(response.headers["Cache-Control"], "no-store")
 
     def test_pages_have_security_headers(self):
-        for route in ("/", "/captions"):
+        for route in ("/",):
             response = self.client.get(route)
             self.assertEqual(response.status_code, 200)
             self.assertIn("frame-ancestors 'none'", response.headers["Content-Security-Policy"])
             self.assertEqual(response.headers["X-Frame-Options"], "DENY")
+
+    def test_stage_uses_clean_fullscreen_controls(self):
+        html = self.client.get("/").get_data(as_text=True)
+        self.assertIn("進入全螢幕簡報", html)
+        self.assertIn('class="stage-edge-handle"', html)
+        self.assertIn('id="fullscreenPrompt"', html)
+        self.assertNotIn('class="stage-header"', html)
+        self.assertNotIn('id="overlayToggle"', html)
 
     def test_rejects_cross_site_mutations_but_allows_local_origin(self):
         rejected = self.client.post(
