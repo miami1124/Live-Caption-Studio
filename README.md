@@ -17,7 +17,7 @@
 - 調整字幕大小與字幕疊加方式
 - 鍵盤、滑鼠與簡報筆翻頁
 - Gemini 斷線後自動重連
-- 支援字幕 Picture-in-Picture 浮窗；瀏覽器不支援時可改開獨立字幕頁面
+- 字幕直接疊在投影片上；Chrome 116 以上或 Edge 另可額外開啟 Picture-in-Picture 字幕浮窗
 - Windows、macOS、Linux 本機執行
 
 ## 使用前準備
@@ -105,7 +105,7 @@ GEMINI_API_KEY=你的_API_key
 - 來源語言固定為中文，第一版只提供英文、日文、韓文輸出。
 - Gemini 端到端翻譯模型無法可靠套用自訂術語表，`n8n`、人名與公司名等專有名詞可能翻錯。
 - 加密、損毀、超過 50 MB 或超過 200 頁的 PDF 不支援。
-- 字幕浮窗取決於瀏覽器的 Document Picture-in-Picture 支援；必要時請使用「另開字幕頁面」。
+- 字幕浮窗是額外功能，需要瀏覽器支援 Document Picture-in-Picture（Chrome 116 以上或 Edge）；不支援時字幕仍會正常疊在投影片上。
 - 額度、速率限制與可能產生的 API 費用由使用者自己的 Google 專案承擔。
 
 ## 開發與測試
