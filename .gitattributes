@@ -1,0 +1,7 @@
+# Windows 批次檔一定要 CRLF 換行。
+# 用 LF 的話 cmd.exe 會找不到 goto 的標籤，雙擊後視窗一閃就關、什麼都不做。
+*.bat text eol=crlf
+
+# 這兩支是 Unix shell script，反過來一定要 LF
+*.sh text eol=lf
+*.command text eol=lf

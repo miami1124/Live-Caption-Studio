@@ -38,42 +38,9 @@ Windows 安裝時如果看到「Add Python to PATH」，勾起來比較保險，
 
 ### 4. 填入 API key
 
-**建議做法**：在啟動畫面展開「聲音與連線」，把 key 直接貼進去。它只留在這次執行的記憶體裡，**關掉程式就消失，不會寫進任何檔案**。缺點是每次開都要貼一次。
+程式打開後，展開畫面上的「聲音與連線」，把剛剛複製的 key 貼進去就好。
 
-**如果嫌麻煩**，可以把 key 存在**這個專案資料夾裡**的一個設定檔，之後開啟就免貼。
-
-（這個檔案叫 `.env`，就放在你剛下載的資料夾裡。程式只會讀這一個檔，不會去翻你電腦裡的其他東西。）
-
-先建立這個檔案：
-
-```bash
-cp -n .env.example .env
-```
-
-> ⚠️ **`-n` 這個參數不要省略。** 它的意思是「已經有 `.env` 就不要覆蓋」。
-> 如果你之前已經設定過，少了 `-n` 會直接把你原本的 key 洗掉——而且 `cp` 成功時不會有任何訊息，你不會發現。
-
-接著用文字編輯器打開它，填上你的 key：
-
-```bash
-# macOS
-open -e .env
-
-# Linux
-xdg-open .env
-
-# Windows
-notepad .env
-```
-
-```dotenv
-GEMINI_API_KEY=你的_API_key
-```
-
-> `.env` 開頭是一個點，在 macOS Finder 和 Windows 檔案總管裡預設是隱藏的，用上面的指令開最快。
-> （macOS Finder 想直接看到它，按 `Cmd` + `Shift` + `.` 可以切換顯示隱藏檔案。）
-
-這個檔案就存在你自己的電腦裡，不會傳到任何地方。只要注意兩件事：**不要把整個資料夾分享給別人**，也不要把 `.env` 上傳到 GitHub——本專案已經設定成自動忽略它，正常操作不會誤傳。
+key 只留在程式的記憶體裡，**關掉程式就自動清除，不會寫進電腦裡任何檔案**。下次開啟再貼一次即可。
 
 如果 key 不小心外流了，到 [Google AI Studio](https://aistudio.google.com/app/apikey) 把它刪掉重建一組就好。
 
@@ -203,6 +170,24 @@ python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 python app.py
 ```
+
+### 每次都要重貼 key 很煩？
+
+常常使用的話，可以把 key 寫進專案資料夾裡的 `.env`，程式啟動時會自動讀取：
+
+```bash
+cp -n .env.example .env    # -n 的意思是「已經有就不要覆蓋」，別省略
+```
+
+然後編輯 `.env`（macOS `open -e .env`／Windows `notepad .env`）填入：
+
+```dotenv
+GEMINI_API_KEY=你的_API_key
+```
+
+這個檔案只存在你自己的電腦裡。`.gitignore` 已經排除它，正常操作不會誤傳到 GitHub。
+
+### 其他
 
 若環境裡已有 `GEMINI_API_KEY`，可以驗證 Gemini Live Translate 握手：
 
