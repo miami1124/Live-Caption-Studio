@@ -5,7 +5,10 @@
 先確認使用者的作業系統，各自的地雷不一樣：
 
 **Windows**
-先跑 `where python`。路徑含 `WindowsApps` 就是 Microsoft Store 版，它缺 `ensurepip`，建立虛擬環境一定失敗——要先改裝 python.org 官方版（`winget install -e --id Python.Python.3.12`），並刪掉失敗的 `.venv` 再重試。
+先跑 `where python`。路徑含 `WindowsApps` 代表 `python` 指到 Microsoft Store 版，它缺 `ensurepip`，建立虛擬環境一定失敗。但**先別叫使用者重裝**——官方版可能早就裝好、只是排在後面，先跑 `py -3.12 --version` 確認。有版本號就一律改用 `py -3.12`；真的沒有才裝（`winget install -e --id Python.Python.3.12`），並刪掉失敗的 `.venv` 再重試。
+
+**⚠️ 如果你在沙盒環境裡**
+`ensurepip` 失敗、暫存目錄權限被拒、你開的終端機視窗被關掉——這些是**你的執行環境限制，不是專案問題**。不要繼續繞，直接請使用者自己雙擊 `start.bat`（macOS 右鍵開 `start.command`），兩分鐘就好。實測有 agent 為此繞了十幾分鐘。
 
 **macOS**
 使用者自己雙擊 `start.command` 第一次一定會被 Gatekeeper 擋（「來自未識別的開發者」），要請他改用**右鍵 →「打開」**。你在終端機直接跑 `./start.sh` 不受影響，必要時先 `chmod +x start.command start.sh`。

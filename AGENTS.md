@@ -23,13 +23,22 @@ py --version        # Windows
 where python
 ```
 
-如果路徑裡包含 `WindowsApps`，代表這是 **Microsoft Store 版的 Python**，它缺少 `ensurepip`，**建立虛擬環境一定會失敗**。請先讓使用者改裝官方版：
+如果路徑裡包含 `WindowsApps`，代表 `python` 這個指令指到的是 **Microsoft Store 版**，它缺少 `ensurepip`，**建立虛擬環境一定會失敗**。
+
+⚠️ **但先別急著叫使用者重裝。** `where python` 只是告訴你「哪個排在搜尋順序前面」，官方版可能早就裝好了，只是排在後面。先確認：
 
 ```
-winget install -e --id Python.Python.3.12
+py -3.12 --version
 ```
 
-裝完要關掉並重開命令提示字元，然後用 `py -3.12` 而不是 `py -3`。
+- **有回版本號** → 官方版已經在了，**不用重裝**。接下來一律用 `py -3.12`，不要用 `python` 或 `py -3`（那可能又指回 Store 版）
+- **指令失敗** → 才需要安裝官方版：
+
+  ```
+  winget install -e --id Python.Python.3.12
+  ```
+
+  裝完要關掉並重開命令提示字元。
 
 ### 啟動
 
@@ -72,6 +81,29 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5090/api/health
 
 ---
 
+## 🛑 如果你在沙盒環境裡（請先讀這段）
+
+**你可能裝不起來，而且那不是這個專案的問題。**
+
+實測（2026-07-29，Codex on Windows）：agent 的沙盒無法寫入 `%TEMP%`，導致 `ensurepip` 失敗；改指到專案內的暫存目錄被 Windows 受控資料夾存取擋下；`C:\tmp` 也被擋；另開的 PowerShell / cmd 視窗會被 agent 的 job sandbox 立刻收掉。整整繞了十幾分鐘。
+
+**一般使用者自己雙擊 `start.bat` 完全不會遇到這些。**
+
+所以遇到下列任何一種狀況，**不要繼續想辦法繞過**——直接請使用者自己動手，兩分鐘就好：
+
+- `ensurepip` 失敗、但已確認用的是官方版 Python
+- 建立虛擬環境時出現權限或暫存目錄相關錯誤
+- 你開的終端機視窗被系統關掉
+- pip 卡住不下載、CPU 一直滿載
+
+請這樣跟使用者說：
+
+> 我的執行環境有權限限制，沒辦法幫你完成安裝，但你自己做很快。
+> 請打開專案資料夾，**雙擊 `start.bat`**（macOS 是右鍵 →「打開」`start.command`）。
+> 第一次會花 1-2 分鐘裝套件，完成後瀏覽器會自己開啟。那個視窗請保持開啟。
+
+**這比你繼續繞路快十倍，而且不會在使用者的電腦上留下一堆半成品的環境。**
+
 ## 已知失敗模式
 
 實測踩過的坑，遇到直接對照，不用重新診斷：
@@ -85,6 +117,8 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5090/api/health
 | 找不到 `app.py` / `.venv` | 在錯誤的資料夾下指令 | `cd` 到專案資料夾再執行 |
 | macOS：「無法打開，因為它來自未識別的開發者」 | Gatekeeper 擋下從網路下載的執行檔 | 請使用者用**右鍵 →「打開」**；或在終端機 `chmod +x start.command start.sh` 後執行 |
 | Linux：建立虛擬環境失敗 | 缺 venv 模組 | `sudo apt install python3-venv` |
+| `git clone` 出現 Schannel／憑證錯誤 | Windows 版 Git 預設的 TLS 後端在某些網路環境會失敗 | 單次改用 OpenSSL：`git -c http.sslBackend=openssl clone <url>`（不要動全域設定）。或改叫使用者直接下載 ZIP |
+| `ensurepip` 失敗、暫存目錄權限被拒、視窗被關掉 | **你的沙盒環境限制，不是專案問題** | 見上方「如果你在沙盒環境裡」，請使用者自己雙擊啟動 |
 
 ## 安裝後使用者還需要做的事
 
