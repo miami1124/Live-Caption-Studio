@@ -11,7 +11,7 @@
 `ensurepip` 失敗、暫存目錄權限被拒、你開的終端機視窗被關掉——這些是**你的執行環境限制，不是專案問題**。不要繼續繞，直接請使用者自己雙擊 `start.bat`（macOS 右鍵開 `start.command`），兩分鐘就好。實測有 agent 為此繞了十幾分鐘。
 
 **macOS**
-使用者自己雙擊 `start.command` 第一次一定會被 Gatekeeper 擋（「來自未識別的開發者」），要請他改用**右鍵 →「打開」**。你在終端機直接跑 `./start.sh` 不受影響，必要時先 `chmod +x start.command start.sh`。
+使用者自己雙擊 `start.command` 第一次一定會被 Gatekeeper 擋。⚠️ **別叫他用「右鍵 →『打開』」**，macOS 15 之後那個繞道已被移除（macOS 26 實測確認），對話框只剩「完成」和「丟到垃圾桶」。正解是「系統設定 → 隱私權與安全性 → 安全性區塊 → 仍要打開」，或執行 `xattr -d com.apple.quarantine start.command start.sh`。你在終端機直接跑 `./start.sh` 不受影響。
 
 **Linux**
 Debian / Ubuntu 系可能缺 venv 模組：`sudo apt install python3-venv`。

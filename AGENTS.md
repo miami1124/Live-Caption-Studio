@@ -53,7 +53,17 @@ cd /path/to/gemini-live-caption
 py -3.12 scripts\launcher.py
 ```
 
-**macOS 額外注意**：如果使用者是自己雙擊 `start.command`，第一次一定會被 Gatekeeper 擋下（「無法打開，因為它來自未識別的開發者」）。要請他改用**右鍵 →「打開」**才會出現「仍要打開」的選項。你直接在終端機跑 `./start.sh` 則不受影響，但可能需要先給執行權限：
+**macOS 額外注意**：使用者自己雙擊 `start.command` 第一次一定會被 Gatekeeper 擋下。
+
+⚠️ **不要叫他用「右鍵 →『打開』」**——macOS 15 之後那個繞道已被移除，對話框只會給「完成」和「丟到垃圾桶」（2026-07-29 在 macOS 26 實測確認）。正確做法是請他到**系統設定 →「隱私權與安全性」→「安全性」區塊 →「仍要打開」**。
+
+你自己在終端機跑 `./start.sh` 不受影響。也可以直接幫他移除隔離標記：
+
+```bash
+xattr -d com.apple.quarantine start.command start.sh
+```
+
+必要時再給執行權限：
 
 ```bash
 chmod +x start.command start.sh
@@ -99,7 +109,8 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5090/api/health
 請這樣跟使用者說：
 
 > 我的執行環境有權限限制，沒辦法幫你完成安裝，但你自己做很快。
-> 請打開專案資料夾，**雙擊 `start.bat`**（macOS 是右鍵 →「打開」`start.command`）。
+> 請打開專案資料夾，**雙擊 `start.bat`**（macOS 是雙擊 `start.command`，
+> 第一次會被 Gatekeeper 擋，到「系統設定 → 隱私權與安全性 → 仍要打開」放行一次即可）。
 > 第一次會花 1-2 分鐘裝套件，完成後瀏覽器會自己開啟。那個視窗請保持開啟。
 
 **這比你繼續繞路快十倍，而且不會在使用者的電腦上留下一堆半成品的環境。**
@@ -115,7 +126,7 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5090/api/health
 | `ERR_CONNECTION_REFUSED` | 程式沒在跑（多半是啟動視窗被關掉） | 重新啟動，並提醒使用者視窗要留著 |
 | 終端機出現亂碼或 `UnicodeEncodeError` | Windows 主控台編碼。已於 2026-07-29 修正 | 重新下載最新版 |
 | 找不到 `app.py` / `.venv` | 在錯誤的資料夾下指令 | `cd` 到專案資料夾再執行 |
-| macOS：「無法打開，因為它來自未識別的開發者」 | Gatekeeper 擋下從網路下載的執行檔 | 請使用者用**右鍵 →「打開」**；或在終端機 `chmod +x start.command start.sh` 後執行 |
+| macOS：「Apple 無法驗證是否為惡意軟體」 | Gatekeeper 擋下從網路下載的執行檔 | **右鍵開啟在 macOS 15+ 已無效**。請使用者走「系統設定 → 隱私權與安全性 → 仍要打開」，或執行 `xattr -d com.apple.quarantine start.command start.sh` |
 | Linux：建立虛擬環境失敗 | 缺 venv 模組 | `sudo apt install python3-venv` |
 | `git clone` 出現 Schannel／憑證錯誤 | Windows 版 Git 預設的 TLS 後端在某些網路環境會失敗 | 單次改用 OpenSSL：`git -c http.sslBackend=openssl clone <url>`（不要動全域設定）。或改叫使用者直接下載 ZIP |
 | `ensurepip` 失敗、暫存目錄權限被拒、視窗被關掉 | **你的沙盒環境限制，不是專案問題** | 見上方「如果你在沙盒環境裡」，請使用者自己雙擊啟動 |

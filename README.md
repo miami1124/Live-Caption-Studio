@@ -38,8 +38,10 @@
 請不要繼續想辦法繞過，直接叫我自己雙擊 start.bat 就好，兩分鐘的事。
 
 【macOS】
-start.command 第一次要用「右鍵 → 打開」，直接雙擊會被 Gatekeeper 擋下。
-必要時先執行 chmod +x start.command start.sh。
+start.command 第一次一定會被 Gatekeeper 擋（Apple 無法驗證）。
+注意：macOS 15 以上「右鍵 → 打開」已經沒有「仍要打開」選項了，別叫我用那招。
+正解是「系統設定 → 隱私權與安全性 → 安全性區塊 → 仍要打開」，
+或直接在終端機執行 xattr -d com.apple.quarantine start.command start.sh。
 
 【Linux】
 可能要先安裝 python3-venv。
@@ -69,7 +71,7 @@ start.command 第一次要用「右鍵 → 打開」，直接雙擊會被 Gateke
 | 系統 | 安裝說明 | 特別注意 |
 |---|---|---|
 | **Windows** | [install/windows.md](install/windows.md) | ⚠️ 一定要裝 python.org 官方版，不能用 Microsoft Store 版 |
-| **macOS** | [install/macos.md](install/macos.md) | 第一次要用右鍵開啟，不能直接雙擊 |
+| **macOS** | [install/macos.md](install/macos.md) | 第一次會被 Gatekeeper 擋下，裡面有放行步驟 |
 | **Linux** | [install/linux.md](install/linux.md) | 可能要先裝 `python3-venv` |
 
 共通條件：**Python 3.10 以上**，瀏覽器用**最新版 Chrome 或 Edge**。
