@@ -26,8 +26,16 @@
 請先確認我的作業系統，再照對應的注意事項處理：
 
 【Windows】
-先跑 where python 檢查。路徑含 WindowsApps 就是 Microsoft Store 版，
-它缺少 ensurepip，虛擬環境一定建不起來，必須先改裝 python.org 官方版。
+先跑 where python。路徑含 WindowsApps 代表 python 指到 Microsoft Store 版，
+它缺少 ensurepip，虛擬環境會建不起來。
+但先別叫我重裝——官方版可能早就裝好、只是排在後面。
+請先跑 py -3.12 --version 確認：有版本號就一律改用 py -3.12，
+真的沒有才安裝官方版。
+
+【如果你是在沙盒或受限環境裡執行】
+遇到 ensurepip 失敗、暫存目錄權限被拒、或你開的視窗被系統關掉，
+那是你的執行環境限制，不是這個專案的問題。
+請不要繼續想辦法繞過，直接叫我自己雙擊 start.bat 就好，兩分鐘的事。
 
 【macOS】
 start.command 第一次要用「右鍵 → 打開」，直接雙擊會被 Gatekeeper 擋下。
