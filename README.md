@@ -29,41 +29,25 @@
 
 ## 開始使用
 
-### 1. 安裝 Python
+### 1. 依你的系統安裝
 
-需要 [Python 3.10 以上](https://www.python.org/downloads/)。
+各系統的地雷不一樣，請照著自己的那份走：
 
-> ### ⚠️ Windows 使用者請注意
->
-> **一定要從 [python.org](https://www.python.org/downloads/) 下載官方版**，安裝時勾選 **Add Python to PATH**。
->
-> 不要用在命令列打 `python` 時跳出來的 **Microsoft Store 版**——那個版本缺少建立虛擬環境需要的元件，本工具會裝不起來（實測過，Store 版 Python 3.14 就會卡住）。
->
-> 已經裝到 Store 版的話，改裝官方版後，把資料夾裡的 `.venv` 整個刪掉再重試。也可以用一行指令安裝：
->
-> ```
-> winget install -e --id Python.Python.3.12
-> ```
+| 系統 | 安裝說明 | 特別注意 |
+|---|---|---|
+| **Windows** | [install/windows.md](install/windows.md) | ⚠️ 一定要裝 python.org 官方版，不能用 Microsoft Store 版 |
+| **macOS** | [install/macos.md](install/macos.md) | 第一次要用右鍵開啟，不能直接雙擊 |
+| **Linux** | [install/linux.md](install/linux.md) | 可能要先裝 `python3-venv` |
 
-macOS 通常已內建可用的 Python；沒有的話一樣到官網下載即可。
+共通條件：**Python 3.10 以上**，瀏覽器用**最新版 Chrome 或 Edge**。
+
+第一次啟動會自動建立環境並安裝套件（約 1-2 分鐘），完成後瀏覽器會開啟 `http://127.0.0.1:5090`。
 
 ### 2. 取得 Gemini API key
 
 到 [Google AI Studio](https://aistudio.google.com/app/apikey) 建立一組。免費額度就能用，用量與費用都算在你自己的 Google 專案上。
 
-### 3. 啟動
-
-| 系統 | 做法 |
-|---|---|
-| **Windows** | 雙擊 `start.bat` |
-| **macOS** | 在 `start.command` 上**按右鍵 →「打開」**（第一次一定要用右鍵，直接雙擊會被 Gatekeeper 擋下） |
-| **Linux** | `chmod +x start.sh && ./start.sh` |
-
-第一次啟動會自動建立 `.venv` 並安裝套件，大約一兩分鐘。完成後瀏覽器會自動開啟 `http://127.0.0.1:5090`。
-
-**請用最新版 Chrome 或 Edge。** 字幕浮窗功能需要它們才有。
-
-### 4. 填入 API key
+### 3. 填入 API key
 
 程式打開後，展開畫面上的「聲音與連線」，把剛剛複製的 key 貼進去就好。
 
@@ -225,6 +209,18 @@ python scripts/gemini_smoke_test.py
 > 改 `templates/` 底下的檔案後**要重開 server**才會生效（Flask 在非 debug 模式會快取模板）。改 CSS / JS 只要重整瀏覽器。
 
 回報問題請開 [Issue](../../issues)。安全性問題請看 [SECURITY.md](SECURITY.md)。
+
+---
+
+## 關於作者
+
+**SAM（張莆崧）** — 新聞媒體工作者，在做影音與 AI 自動化。
+
+這個工具的起點是一場真實的需求：在中研院用中文做報告，台下有聽不懂中文的外國學者。實際上台用過之後，才慢慢補成現在這個樣子。
+
+- GitHub：[@miami1124](https://github.com/miami1124)
+
+歡迎回報使用狀況，特別是**卡住的地方**——那些是我自己一台電腦測不出來的。
 
 ## 授權
 
