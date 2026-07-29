@@ -14,6 +14,7 @@ import json
 import os
 import shutil
 import ssl
+import sys
 import tempfile
 import threading
 import uuid
@@ -27,6 +28,14 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request, send_file
 from flask_sock import Sock
 
+
+for _stream in (sys.stdout, sys.stderr):
+    # Windows 主控台預設編碼吃不下中文，啟動訊息會直接讓程式 crash。
+    # launcher 是把 app.py 當子行程跑的，所以這裡也要各自處理一次。
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")

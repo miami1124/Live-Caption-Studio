@@ -13,6 +13,22 @@ import webbrowser
 from pathlib import Path
 
 
+def _force_utf8_output() -> None:
+    """Windows 的主控台預設編碼吃不下中文，一 print 就 UnicodeEncodeError。
+
+    這不只是訊息醜掉而已：它會讓「安裝失敗」的友善提示自己變成一個 crash，
+    使用者反而看不到真正的原因（CI 的 windows-latest 就是這樣一直紅的）。
+    改成 UTF-8 並在真的編不出來時用替代字元，至少不會整個炸掉。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass   # 被導向到不支援 reconfigure 的物件（例如測試的假 stdout）
+
+
+_force_utf8_output()
+
 ROOT = Path(__file__).resolve().parents[1]
 VENV_DIR = ROOT / ".venv"
 REQUIREMENTS = ROOT / "requirements.txt"
