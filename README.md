@@ -1,14 +1,25 @@
 # Live Caption Studio
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#開始使用)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
+[![Tests](https://github.com/miami1124/gemini-live-caption/actions/workflows/test.yml/badge.svg)](https://github.com/miami1124/gemini-live-caption/actions/workflows/test.yml)
+
 用中文報告，台下即時看到英文、日文或韓文字幕——字幕直接疊在你的 PDF 簡報上。
 
 這是一套**在你自己電腦上執行**的開源工具。你用自己的 Gemini API key，上傳簡報PDF就可以成功使用。
 
 ![Live Caption Studio 簡報畫面](assets/screenshots/stage.png)
 
-> 💡 **打算把這個連結丟給 ChatGPT / Claude / Codex 幫你安裝嗎？**
-> 可以，這個專案附了 [AGENTS.md](AGENTS.md)，裡面有精確的安裝指令、已知地雷和驗證方式。
-> 跟你的 AI 說「請先讀這個 repo 的 AGENTS.md 再幫我安裝」，會順很多。
+> 💡 **打算把這個連結丟給 AI 幫你安裝嗎？** 可以，這個專案為此準備了說明檔：
+>
+> | 你用的工具 | 跟它說 |
+> |---|---|
+> | Claude Code | 「讀這個 repo 的 `CLAUDE.md` 再幫我安裝」 |
+> | Codex / Cursor / 其他 | 「讀這個 repo 的 `AGENTS.md` 再幫我安裝」 |
+> | ChatGPT、Gemini 等對話介面 | 把 [AGENTS.md](AGENTS.md) 的內容貼給它 |
+>
+> 裡面有精確到資料夾的指令、已知地雷和驗證方式，可以省下不少來回。
 
 ## 適合什麼場合
 
