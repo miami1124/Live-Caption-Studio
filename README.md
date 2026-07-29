@@ -1,114 +1,170 @@
 # Live Caption Studio
 
-講中文時，將內容即時翻成英文、日文或韓文字幕，並直接疊在你的 PDF 簡報上。
+用中文報告，台下即時看到英文、日文或韓文字幕——字幕直接疊在你的 PDF 簡報上。
 
-這是一套在使用者電腦本機執行的開源工具。每位使用者使用自己的 Gemini API key，不共用開發者額度，也不需要把 PDF 上傳到雲端網站。
+這是一套**在你自己電腦上執行**的開源工具。你用自己的 Gemini API key，不共用任何人的額度，簡報檔也不會上傳到任何網站。
 
-> Beta：Gemini 3.5 Live Translate 目前仍是 Preview 模型，API 格式、額度與可用性可能變動。
+> **Beta**：Gemini Live Translate 目前仍是 Preview 模型，API 格式、額度與可用性都可能變動。
 
-![Live Caption Studio 簡報舞台](assets/screenshots/stage.png)
+![Live Caption Studio 簡報畫面](assets/screenshots/stage.png)
 
-## 功能
+## 適合什麼場合
 
-- 上傳 PDF 後直接播放簡報
-- 中文即時翻成英文、日文或韓文
-- 選擇與測試麥克風
-- 顯示或隱藏中文辨識對照
-- 調整字幕大小與字幕疊加方式
-- 鍵盤、滑鼠與簡報筆翻頁
-- Gemini 斷線後自動重連
-- 字幕直接疊在投影片上；Chrome 116 以上或 Edge 另可額外開啟 Picture-in-Picture 字幕浮窗
-- Windows、macOS、Linux 本機執行
+上台報告時台下有聽不懂中文的人。你照常講中文，他們看螢幕上的字幕。
 
-## 使用前準備
+**不適合**：需要逐字稿存檔、多人同時連線、或把字幕推到其他裝置——這些都沒做。
 
-1. 安裝 [Python 3.10 以上版本](https://www.python.org/downloads/)。Windows 安裝時請勾選 **Add Python to PATH**。
-2. 使用最新版 Chrome 或 Edge。其他瀏覽器可能無法使用字幕浮窗。
-3. 到 [Google AI Studio](https://aistudio.google.com/app/apikey) 建立自己的 Gemini API key。
+---
 
-Google 正在把 Gemini API key 遷移至新的 Authorization key。2026 年 9 月後，未遷移的 Standard key 可能無法使用；建議直接在 Google AI Studio 建立最新類型的 key。
+## 開始使用
 
-## 啟動方式
+### 1. 安裝 Python
 
-### Windows
+需要 [Python 3.10 以上](https://www.python.org/downloads/)，到官網下載安裝就好，其他都不用設定。
 
-雙擊 `start.bat`。
+Windows 安裝時如果看到「Add Python to PATH」，勾起來比較保險，但**沒勾也能跑**。真的沒裝 Python 的話，啟動時會直接告訴你，不會發生一堆看不懂的錯誤。
 
-### macOS
+### 2. 取得 Gemini API key
 
-第一次使用時，在 `start.command` 上按右鍵選擇「打開」。如果系統顯示沒有執行權限，可在終端機執行：
+到 [Google AI Studio](https://aistudio.google.com/app/apikey) 建立一組。免費額度就能用，用量與費用都算在你自己的 Google 專案上。
 
-```bash
-chmod +x start.command start.sh
-./start.command
-```
+> Google 正在把 API key 遷移到新的 Authorization key。建議直接建立最新類型的 key，舊的 Standard key 未來可能失效。
 
-### Linux
+### 3. 啟動
 
-```bash
-chmod +x start.sh
-./start.sh
-```
+| 系統 | 做法 |
+|---|---|
+| **Windows** | 雙擊 `start.bat` |
+| **macOS** | 在 `start.command` 上**按右鍵 →「打開」**（第一次一定要用右鍵，直接雙擊會被 Gatekeeper 擋下） |
+| **Linux** | `chmod +x start.sh && ./start.sh` |
 
-第一次啟動會自動建立 `.venv` 並安裝必要套件，完成後瀏覽器會開啟 `http://127.0.0.1:5090`。
+第一次啟動會自動建立 `.venv` 並安裝套件，大約一兩分鐘。完成後瀏覽器會自動開啟 `http://127.0.0.1:5090`。
 
-## 設定 Gemini API key
+**請用最新版 Chrome 或 Edge。** 字幕浮窗功能需要它們才有。
 
-最簡單的方式是在首次啟動畫面貼上 key。它只會保留在本次 Python 程序的記憶體，關閉程式後自動清除。
+### 4. 填入 API key
 
-如果是自己的固定電腦，也可以複製 `.env.example` 為 `.env`：
+**建議做法**：在啟動畫面展開「聲音與連線」，把 key 直接貼進去。它只留在這次執行的記憶體裡，**關掉程式就消失，不會寫進任何檔案**。缺點是每次開都要貼一次。
+
+**如果嫌麻煩**，可以把 key 存在**這個專案資料夾裡**的一個設定檔，之後開啟就免貼。
+
+（這個檔案叫 `.env`，就放在你剛下載的資料夾裡。程式只會讀這一個檔，不會去翻你電腦裡的其他東西。）
 
 ```bash
 cp .env.example .env
 ```
 
-再填入：
+然後用文字編輯器打開 `.env`，填上你的 key：
 
 ```dotenv
 GEMINI_API_KEY=你的_API_key
 ```
 
-`.env` 已排除於 Git 版控，但仍請把 API key 當成密碼保管。
+這個檔案就存在你自己的電腦裡，不會傳到任何地方。只要注意兩件事：**不要把整個資料夾分享給別人**，也不要把 `.env` 上傳到 GitHub——本專案已經設定成自動忽略它，正常操作不會誤傳。
 
-## 操作方式
+如果 key 不小心外流了，到 [Google AI Studio](https://aistudio.google.com/app/apikey) 把它刪掉重建一組就好。
 
-1. 選擇或拖曳 PDF。
-2. 選擇英文、日文或韓文。
-3. 確認 Gemini API key。
-4. 測試麥克風後進入簡報。
-5. 按「開始翻譯」。
-6. 使用方向鍵、空白鍵、滑鼠或簡報筆翻頁。
+---
 
-也可以直接使用 [`sample/sample-presentation.pdf`](sample/sample-presentation.pdf) 測試 PDF 上傳與翻頁。
+## 怎麼用
 
-常用快捷鍵：
+### 開始前設定
+
+畫面上三項，全部亮綠燈才能進簡報：
+
+1. **簡報檔案** — 拖曳或選擇 PDF。Keynote / PowerPoint / Google Slides 都請先匯出成 PDF
+2. **字幕語言** — 台下會看到的語言（你講的還是中文）
+3. **聲音與連線** — 選麥克風、貼 API key
+
+**強烈建議按一次「測試聲音」**。右邊的條會跳，就代表收得到你的聲音。跳過這步偶爾會遇到上台後按了翻譯卻沒字幕。
+
+### 簡報進行中
+
+進去後畫面上**什麼都沒有**——因為投影幕就是這個畫面，台下也在看。
+
+- **控制列**：把滑鼠移到畫面**最下面**才會浮出來，停幾秒自己收掉。翻頁、按快捷鍵都不會叫它出來
+- **字幕位置**：用滑鼠**直接拖**字幕到你想要的地方，位置會記住。拖丟了就到設定面板按「字幕位置歸位」
+- **斷線**：只有連線出問題才會從上面滑下一條提示，同時把字幕調暗，讓你知道螢幕上那句是舊的
+
+### 快捷鍵
 
 | 按鍵 | 功能 |
 |---|---|
 | `M` | 開始／停止翻譯 |
 | `S` | 開關設定面板 |
 | `C` | 顯示／隱藏中文對照 |
-| `P` | 開關字幕浮窗 |
+| `P` | 開關字幕浮窗（需 Chrome 116+／Edge）|
 | `F` | 全螢幕 |
 | `←` `→`、空白鍵 | 投影片翻頁 |
-| `+` `-` | 調整字幕大小 |
+| `+` `-` | 字幕放大／縮小 |
 
-## 隱私與資料流
+沒有 PDF 也想先試？用 [`sample/sample-presentation.pdf`](sample/sample-presentation.pdf)。
 
-- PDF 會傳給這台電腦上的 `127.0.0.1` 本機程式，用來轉成投影片圖片；不會傳到 Gemini 或其他雲端服務。
-- 開始翻譯後，麥克風音訊會即時傳送到 Google Gemini，以取得中文辨識與翻譯字幕。
-- 本工具不主動保存音訊、逐字稿或字幕內容。
-- Gemini API 的資料處理方式仍受 Google 的服務條款與隱私政策約束。
+---
 
-## 已知限制
+## 遇到問題
 
-- 來源語言固定為中文，第一版只提供英文、日文、韓文輸出。
-- Gemini 端到端翻譯模型無法可靠套用自訂術語表，`n8n`、人名與公司名等專有名詞可能翻錯。
-- 加密、損毀、超過 50 MB 或超過 200 頁的 PDF 不支援。
-- 字幕浮窗是額外功能，需要瀏覽器支援 Document Picture-in-Picture（Chrome 116 以上或 Edge）；不支援時字幕仍會正常疊在投影片上。
-- 額度、速率限制與可能產生的 API 費用由使用者自己的 Google 專案承擔。
+### 按了「開始翻譯」但完全沒字幕
 
-## 開發與測試
+1. 回到設定頁按「**測試聲音**」，確認音量條會跳
+2. 檢查瀏覽器有沒有擋掉麥克風權限（網址列左邊的圖示）
+3. 用的是藍牙耳機或外接麥克風？在「聲音與連線」的下拉選單改選正確的裝置
+4. 翻譯中如果連續十幾秒收不到任何聲音，畫面上方會自己跳出提示
+
+### 找不到「開始翻譯」按鈕
+
+把滑鼠移到畫面**最底部**，控制列就會浮出來。或直接按 `M`。
+
+### 字幕擋到投影片內容
+
+用滑鼠抓著字幕拖走就好，它會記住新位置。
+
+### 專有名詞被翻錯
+
+這個沒有解。Gemini 的即時翻譯是端到端模型，沒有地方可以事先餵它公司名或術語，而且**每次講同一個詞，錯法都可能不一樣**。這是目前的技術限制，不是設定問題。
+
+### 字幕跟不上／延遲很久
+
+檢查網路。音訊是即時傳到 Google 的，網路不穩就會延遲或斷線。
+
+### 出現「額度用完」
+
+你的 Google 專案額度或速率限制到了，到 Google AI Studio 查看。
+
+### 出現「API key 無效」或「翻譯模型無法使用」
+
+先確認 key 沒貼錯、沒多空格。如果確定沒錯，問題可能是**你的 key 沒有這個預覽模型的存取權限**——Live Translate 還在 public preview，不是每組 key 都開放。到 [Google AI Studio](https://aistudio.google.com/app/apikey) 用同一個帳號重新建一組最新的 key 再試。
+
+---
+
+## 你的資料去了哪裡
+
+只有一件事會離開你的電腦，就是**你講話的聲音**：
+
+- **簡報 PDF 完全不會上網。** 它只在你自己的電腦裡轉成圖片，暫存在系統的暫存資料夾，關掉程式就自動刪掉
+- **麥克風收到的聲音會傳給 Google Gemini。** 這是翻譯必要的——沒有它就沒有字幕
+- 本工具**不會**保存你的錄音、逐字稿或字幕，講完就沒了
+- 聲音送到 Google 之後怎麼處理，就依照 Google 自己的服務條款與隱私政策
+- 這個程式只在你這台電腦上開放，**同一個 Wi-Fi 底下的其他人也連不進來**
+
+## 這個工具能做到什麼、做不到什麼
+
+先講清楚範圍，免得你裝好才發現不合用：
+
+**做得到**：你講中文，台下即時看到英文／日文／韓文字幕，疊在你的 PDF 簡報上。
+
+**做不到**：
+- 講中文以外的語言（來源語言固定中文）
+- 輸出英日韓以外的語言
+- 保證專有名詞正確——公司名、人名、術語會被翻錯，而且每次錯法不一樣
+- 讀取加密、損毀、超過 50 MB 或超過 200 頁的 PDF
+- 字幕換行（一律單行，太長的句子會自動縮小字級）
+
+**需要注意**：字幕浮窗需要 Chrome 116 以上或 Edge；用其他瀏覽器字幕還是會正常疊在投影片上，只是沒有浮窗。API 的額度、速率限制與可能的費用，都算在你自己的 Google 專案上。
+
+---
+
+## 開發
 
 ```bash
 python3 -m venv .venv
@@ -118,11 +174,15 @@ python -m unittest discover -s tests -v
 python app.py
 ```
 
-如果環境裡已有 `GEMINI_API_KEY`，可以驗證 Gemini Live Translate 握手：
+若環境裡已有 `GEMINI_API_KEY`，可以驗證 Gemini Live Translate 握手：
 
 ```bash
 python scripts/gemini_smoke_test.py
 ```
+
+> 改 `templates/` 底下的檔案後**要重開 server**才會生效（Flask 在非 debug 模式會快取模板）。改 CSS / JS 只要重整瀏覽器。
+
+回報問題請開 [Issue](../../issues)。安全性問題請看 [SECURITY.md](SECURITY.md)。
 
 ## 授權
 

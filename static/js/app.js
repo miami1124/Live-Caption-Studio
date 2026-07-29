@@ -1,14 +1,18 @@
 const elements = Object.fromEntries(
   [
-    "setupView", "stageView", "progressText", "pdfBlock", "dropZone", "pdfInput", "pdfMeta",
-    "connectionBlock", "keyOrb", "keyStatusTitle", "keyStatusText", "editKeyBtn", "keyForm",
-    "apiKeyInput", "micSelect", "micTestBtn", "setupMeter", "enterStageBtn", "setupError",
-    "slideImage", "slideLoader", "liveStatus", "settingsBtn", "sourceCaption", "targetCaption",
-    "translateBtn", "zhToggleBtn",
-    "captionWindowBtn", "fullscreenBtn", "settingsDrawer", "closeSettingsBtn", "drawerBackdrop",
-    "stageLanguageSelect", "stageMicSelect", "smallerBtn", "largerBtn", "captionSizeText",
-    "fullscreenPrompt", "replacePdfBtn", "leaveStageBtn", "toastStack", "stageSurface",
-    "pdfReadyItem", "languageReadyItem", "languageReadyText", "keyReadyItem",
+    "setupView", "stageView", "readyCount",
+    "pdfItem", "pdfRow", "pdfSummary", "pdfAct", "pdfBody", "dropZone", "pdfInput", "pdfMeta",
+    "langItem", "langSummary",
+    "soundItem", "soundSummary",
+    "keyOrb", "keyStatusTitle", "keyStatusText", "editKeyBtn", "keyForm", "apiKeyInput",
+    "micSelect", "micTestBtn", "micTestLabel", "setupMeter",
+    "enterStageBtn", "setupError",
+    "slideImage", "slideLoader", "stageSurface", "stageAlert", "stageAlertText", "stageControls",
+    "translateBtn", "smallerBtn", "largerBtn", "captionSizeText", "settingsBtn",
+    "fullscreenPrompt", "captionLayer", "sourceCaption", "targetCaption",
+    "settingsDrawer", "closeSettingsBtn", "drawerBackdrop", "stageLanguageSelect", "stageMicSelect",
+    "zhToggleBtn", "captionWindowBtn", "fullscreenBtn", "resetCaptionPosBtn",
+    "replacePdfBtn", "leaveStageBtn", "toastStack",
   ].map((id) => [id, document.getElementById(id)])
 );
 
@@ -30,20 +34,45 @@ const state = {
   audioContext: null,
   processor: null,
   analyser: null,
-  meterFrame: null,
   currentTarget: "",
   currentSource: "",
   showSource: localStorage.getItem("liveCaptionShowSource") === "true",
-  captionScale: Number(localStorage.getItem("liveCaptionScale") || "1"),
+  captionScale: Number(localStorage.getItem("liveCaptionScale") || ".9"),
   pipWindow: null,
   pipTarget: null,
   pipSource: null,
+  controlsTimer: null,
+  lastActivity: 0,
+  alertTimer: null,
+  wasDisconnected: false,
+  liveStatus: "idle",
+  silenceTimer: null,
+  silent: false,
+  lastCaptionAt: 0,
+  // 字幕被拖到哪：相對預設位置的位移，記在 localStorage，下次上台還在同一個地方
+  capX: Number(localStorage.getItem("liveCaptionX") || 0),
+  capY: Number(localStorage.getItem("liveCaptionY") || 0),
 };
 
 const captionChannel = "BroadcastChannel" in window ? new BroadcastChannel("gemini-live-caption") : null;
 const languageLabels = { en: "English", ja: "日本語", ko: "한국어" };
-// 電視字幕：一句話自然換行累積，塞滿約一頁（1-2 行）就整頁換新，像中研院實戰版一樣。
-const PAGE_CHARS = 90;
+const nativeLabels = { en: "英文", ja: "日文", ko: "韓文" };
+/* 電視字幕：一句話累積到塞滿一行就整行換新。
+   單位是「半形格」不是字元數——中日韓的字寬是英數的兩倍，
+   用字元數算的話英文 64 字就換行、日文 64 字卻是好幾句的量，
+   結果日文韓文永遠在往右長不換行（2026-07-28 SAM 實測回報）。 */
+const PAGE_WIDTH = 64;
+// 中日韓與全形標點：中日韓統一表意文字、平假名片假名、諺文、全形符號
+const WIDE_CHAR = /[ᄀ-ᇿ⺀-〿぀-ヿ㐀-䶿一-鿿ꥠ-꥿가-힯豈-﫿︰-﹏＀-｠￠-￦]/;
+
+function displayWidth(text) {
+  let width = 0;
+  for (const character of text) width += WIDE_CHAR.test(character) ? 2 : 1;
+  return width;
+}
+// 縮字的下限。到底了還是塞不下就讓它裁掉，總比字小到台下看不到好。
+const CAP_FIT_MIN = .55;
+const CONTROLS_IDLE_MS = 2600;
 
 function toast(message, type = "info") {
   const item = document.createElement("div");
@@ -61,21 +90,58 @@ function broadcast(payload) {
   if (captionChannel) captionChannel.postMessage(payload);
 }
 
-function updateProgress() {
-  const complete = [Boolean(state.deck), true, state.hasApiKey];
-  const count = complete.filter(Boolean).length;
-  elements.progressText.textContent = `${count} / 3 完成`;
-  elements.pdfBlock.classList.toggle("complete", Boolean(state.deck));
-  elements.connectionBlock.classList.toggle("complete", state.hasApiKey);
-  elements.pdfReadyItem.classList.toggle("ready", Boolean(state.deck));
-  elements.pdfReadyItem.querySelector("small").textContent = state.deck
+/* ── 上台前檢查表 ──────────────────────────────────────────────
+   清單本身就是設定，一次只展開一項。四盞燈全綠才放行。 */
+
+function setLamp(item, ready) {
+  const lamp = item.querySelector(".lamp");
+  lamp.classList.toggle("on", ready);
+  lamp.classList.toggle("wait", !ready);
+}
+
+function toggleCheckItem(item) {
+  const willOpen = !item.classList.contains("open");
+  document.querySelectorAll(".check-item").forEach((node) => {
+    node.classList.remove("open");
+    node.querySelector(".check-row").setAttribute("aria-expanded", "false");
+  });
+  if (!willOpen) return;
+  item.classList.add("open");
+  item.querySelector(".check-row").setAttribute("aria-expanded", "true");
+}
+
+function micLabel() {
+  return elements.micSelect.selectedOptions[0]?.textContent || "預設麥克風";
+}
+
+function updateReadiness() {
+  const hasDeck = Boolean(state.deck);
+
+  setLamp(elements.pdfItem, hasDeck);
+  elements.pdfSummary.textContent = hasDeck
     ? `${state.deck.filename} · ${state.deck.pageCount} 頁`
-    : "尚未選擇檔案";
-  elements.keyReadyItem.classList.toggle("ready", state.hasApiKey);
-  elements.keyReadyItem.querySelector("small").textContent = state.hasApiKey
-    ? (state.apiKeySource === "environment" ? "已從 .env 讀取" : "本次執行期間使用")
-    : "尚未設定";
-  elements.enterStageBtn.disabled = !state.deck || !state.hasApiKey;
+    : "還沒選檔案 · PDF、最多 200 頁，只在這台電腦處理";
+  elements.pdfAct.textContent = hasDeck ? "更換" : "選擇檔案";
+
+  setLamp(elements.soundItem, state.hasApiKey);
+  elements.soundSummary.textContent = state.hasApiKey
+    ? `${micLabel()} · Gemini API key ${state.apiKeySource === "environment" ? "已從 .env 讀取" : "已就緒"}`
+    : `${micLabel()} · 還沒設定 Gemini API key`;
+
+  // 語言永遠算就緒，它有預設值
+  const ready = [hasDeck, true, state.hasApiKey].filter(Boolean).length;
+  elements.readyCount.textContent = String(ready);
+
+  // 按鈕不能按的時候一定要說出缺什麼，不能只是變灰
+  const missing = [];
+  if (!hasDeck) missing.push("選擇你的 PDF 簡報");
+  if (!state.hasApiKey) missing.push("設定 Gemini API key");
+  elements.enterStageBtn.disabled = missing.length > 0;
+  elements.enterStageBtn.textContent = missing.length === 0
+    ? "進入全螢幕簡報 →"
+    : missing.length === 1
+      ? `還差一步：${missing[0]}`
+      : `還差兩步：${missing.join("、")}`;
 }
 
 function updateKeyStatus() {
@@ -91,7 +157,7 @@ function updateKeyStatus() {
     elements.editKeyBtn.textContent = "設定";
     elements.keyForm.classList.remove("hidden");
   }
-  updateProgress();
+  updateReadiness();
 }
 
 async function loadConfig() {
@@ -112,14 +178,13 @@ async function loadConfig() {
 function selectLanguage(language) {
   state.language = language in languageLabels ? language : "en";
   localStorage.setItem("liveCaptionLanguage", state.language);
-  document.querySelectorAll(".language-option").forEach((button) => {
+  document.querySelectorAll(".segment").forEach((button) => {
     const selected = button.dataset.lang === state.language;
     button.classList.toggle("selected", selected);
     button.setAttribute("aria-checked", String(selected));
   });
   elements.stageLanguageSelect.value = state.language;
-  const nativeLabels = { en: "英文", ja: "日文", ko: "韓文" };
-  elements.languageReadyText.textContent = `${languageLabels[state.language]} · ${nativeLabels[state.language]}`;
+  elements.langSummary.textContent = `${languageLabels[state.language]} · 台下看到的是${nativeLabels[state.language]}字幕`;
 }
 
 async function uploadPdf(file) {
@@ -145,17 +210,15 @@ async function uploadPdf(file) {
     if (!response.ok) throw new Error(data.message || "PDF 讀取失敗。")
     state.deck = data;
     state.page = 1;
-    elements.pdfMeta.textContent = `${data.filename} · ${data.pageCount} 頁`;
+    elements.pdfMeta.textContent = `${data.pageCount} 頁 · 已讀取完成`;
     elements.dropZone.querySelector(".drop-main").textContent = data.filename;
-    updateProgress();
-    if (!elements.stageView.classList.contains("hidden")) {
-      await showPage(1);
-    }
+    updateReadiness();
+    if (!elements.stageView.classList.contains("hidden")) await showPage(1);
   } catch (error) {
     state.deck = null;
-    elements.pdfMeta.textContent = "檔案只會留在本機";
+    elements.pdfMeta.textContent = "用 Keynote 或 Google Slides？先匯出成 PDF";
     setSetupError(error.message);
-    updateProgress();
+    updateReadiness();
   } finally {
     elements.dropZone.classList.remove("dragging");
     elements.pdfInput.value = "";
@@ -184,6 +247,7 @@ async function loadMicrophones(requestPermission = false) {
       }));
       if (options.some((device) => device.deviceId === previous)) select.value = previous;
     });
+    updateReadiness();
   } catch (error) {
     toast(`無法存取麥克風：${error.message}`, "error");
   } finally {
@@ -206,7 +270,7 @@ function stopMeter(frameName, contextName, streamName, fillElement) {
   state[contextName] = null;
   if (state[streamName]) state[streamName].getTracks().forEach((track) => track.stop());
   state[streamName] = null;
-  if (fillElement) fillElement.style.width = "0%";
+  if (fillElement) fillElement.style.transform = "scaleX(0)";
 }
 
 function animateMeter(analyser, fillElement, frameName) {
@@ -219,7 +283,7 @@ function animateMeter(analyser, fillElement, frameName) {
       energy += normalized * normalized;
     }
     const rms = Math.sqrt(energy / samples.length);
-    fillElement.style.width = `${Math.min(100, rms / 0.08 * 100)}%`;
+    fillElement.style.transform = `scaleX(${Math.min(1, rms / 0.08)})`;
     state[frameName] = requestAnimationFrame(draw);
   };
   draw();
@@ -228,7 +292,8 @@ function animateMeter(analyser, fillElement, frameName) {
 async function toggleMicTest() {
   if (state.micTestStream) {
     stopMeter("micTestFrame", "micTestContext", "micTestStream", elements.setupMeter);
-    elements.micTestBtn.textContent = "測試聲音";
+    elements.micTestBtn.classList.remove("running");
+    elements.micTestLabel.textContent = "測試聲音";
     return;
   }
   try {
@@ -240,7 +305,8 @@ async function toggleMicTest() {
     analyser.fftSize = 1024;
     source.connect(analyser);
     animateMeter(analyser, elements.setupMeter, "micTestFrame");
-    elements.micTestBtn.textContent = "停止測試";
+    elements.micTestBtn.classList.add("running");
+    elements.micTestLabel.textContent = "停止測試";
   } catch (error) {
     toast(`無法啟動麥克風：${error.message}`, "error");
   }
@@ -256,6 +322,7 @@ async function showPage(pageNumber) {
   image.onload = () => {
     elements.slideImage.src = imageUrl;
     elements.slideImage.alt = `投影片第 ${target} 頁，共 ${state.deck.pageCount} 頁`;
+    elements.slideImage.classList.remove("hidden");
     elements.slideLoader.classList.add("hidden");
     preloadPage(target + 1);
   };
@@ -272,28 +339,198 @@ function preloadPage(pageNumber) {
   image.src = `/api/deck/${state.deck.deckId}/page/${pageNumber}.png`;
 }
 
+/* ── 斷線提示 ──────────────────────────────────────────────────
+   正常翻譯時畫面完全乾淨（投影幕就是這個畫面）。
+   只有斷線才從頂部滑下橫幅，同時把字幕調暗，讓講者知道螢幕上這句是舊的。 */
+
+function hideStageAlert() {
+  elements.stageAlert.classList.add("hidden");
+  elements.stageAlert.classList.remove("ok");
+  elements.stageView.classList.remove("alerting");
+}
+
+function updateStageAlert(status, label) {
+  const broken = status === "reconnecting" || status === "error";
+  elements.captionLayer.classList.toggle("stale", broken);
+  clearTimeout(state.alertTimer);
+
+  if (broken) {
+    state.wasDisconnected = true;
+    elements.stageAlert.classList.remove("hidden", "ok");
+    elements.stageAlertText.textContent = label
+      || (status === "error" ? "翻譯連線失敗" : "翻譯連線中斷，正在重新連線…");
+    elements.stageView.classList.add("alerting");
+    return;
+  }
+
+  if (status === "live" && state.wasDisconnected) {
+    state.wasDisconnected = false;
+    elements.stageAlert.classList.remove("hidden");
+    elements.stageAlert.classList.add("ok");
+    elements.stageAlertText.textContent = "已重新連上";
+    elements.stageView.classList.add("alerting");
+    state.alertTimer = setTimeout(hideStageAlert, 2000);
+    return;
+  }
+
+  if (status === "idle") state.wasDisconnected = false;
+  if (!state.silent) hideStageAlert();
+}
+
 function setLiveStatus(status, label) {
-  const labels = { idle: "尚未開始", connecting: "正在連線", live: "即時翻譯中", reconnecting: "重新連線中", error: "連線失敗" };
-  elements.liveStatus.className = `live-status ${status}`;
-  elements.liveStatus.querySelector("strong").textContent = label || labels[status] || labels.idle;
+  state.liveStatus = status;
+  updateStageAlert(status, label);
   broadcast({ type: "status", status });
 }
 
-function captionFontSizes(scale, floating = false) {
-  const sourceViewport = floating ? 3.2 : 2;
-  const sourceMax = floating ? 2.3 : 2;
-  const targetViewport = floating ? 6 : 3.7;
-  const targetMax = floating ? 6 : 4.5;
-  return {
-    source: `clamp(${(1.1 * scale).toFixed(2)}rem, ${(sourceViewport * scale).toFixed(2)}vw, ${(sourceMax * scale).toFixed(2)}rem)`,
-    target: `clamp(${(2 * scale).toFixed(2)}rem, ${(targetViewport * scale).toFixed(2)}vw, ${(targetMax * scale).toFixed(2)}rem)`,
-  };
+/* 收不到聲音的看門狗。
+   2026-07-28 SAM 實戰踩到：沒先在設定頁測過麥克風就直接上台按翻譯，
+   連線是通的、畫面也顯示「正在聆聽中文…」，但講話完全沒有字幕，而且毫無提示。
+   與其讓它默默失敗，不如講清楚要去哪裡檢查。 */
+const SILENCE_LIMIT_MS = 12000;
+
+function checkSilence() {
+  if (!state.running || state.liveStatus !== "live") return;
+  const silent = Date.now() - state.lastCaptionAt > SILENCE_LIMIT_MS;
+  if (silent === state.silent) return;
+  state.silent = silent;
+  if (silent) {
+    elements.stageAlert.classList.remove("hidden", "ok");
+    elements.stageAlertText.textContent = "一直收不到聲音，檢查麥克風有沒有靜音或選錯";
+    elements.stageView.classList.add("alerting");
+  } else {
+    hideStageAlert();
+  }
 }
 
-function applyCaptionFontSizes(target, source, floating = false) {
-  const sizes = captionFontSizes(state.captionScale, floating);
-  if (target) target.style.fontSize = sizes.target;
-  if (source) source.style.fontSize = sizes.source;
+function startSilenceWatch() {
+  stopSilenceWatch();
+  state.lastCaptionAt = Date.now();
+  state.silenceTimer = setInterval(checkSilence, 2000);
+}
+
+function stopSilenceWatch() {
+  clearInterval(state.silenceTimer);
+  state.silenceTimer = null;
+  state.silent = false;
+}
+
+/* ── 浮動控制列 ────────────────────────────────────────────────
+   投影幕就是講者的螢幕，所以平常什麼都不顯示。
+   滑鼠或鍵盤一動就浮出來，停幾秒自己收掉——跟影片播放器一樣。 */
+
+function checkControlsIdle() {
+  const busy = elements.settingsDrawer.classList.contains("open")
+    || elements.stageControls.matches(":hover")
+    || elements.stageControls.contains(document.activeElement);
+  if (busy) state.lastActivity = Date.now();
+  if (Date.now() - state.lastActivity < CONTROLS_IDLE_MS) return;
+  clearInterval(state.controlsTimer);
+  state.controlsTimer = null;
+  elements.stageView.classList.remove("controls-awake");
+}
+
+function wakeControls() {
+  state.lastActivity = Date.now();
+  elements.stageView.classList.add("controls-awake");
+  if (!state.controlsTimer) state.controlsTimer = setInterval(checkControlsIdle, 400);
+}
+
+/* 控制列刻意做得「叫才來」：報告中翻頁、調字級、拖字幕都不該把它召喚到投影幕上。
+   規則是滑鼠移到畫面最下面那條才出現，跟工具列停靠一樣。 */
+const CONTROLS_HOT_ZONE = 120;
+
+function maybeWakeFromPointer(event) {
+  if (elements.settingsDrawer.classList.contains("open")) return;
+  if (elements.captionLayer.classList.contains("dragging")) return;
+  const fromBottom = elements.stageView.getBoundingClientRect().bottom - event.clientY;
+  if (fromBottom <= CONTROLS_HOT_ZONE) wakeControls();
+}
+
+function sleepControlsNow() {
+  clearInterval(state.controlsTimer);
+  state.controlsTimer = null;
+  elements.stageView.classList.remove("controls-awake");
+}
+
+// 字級全部交給 CSS 的 calc(Nvw * var(--capScale))，這裡只負責改那顆變數。
+// 浮窗是獨立的 document，變數不會繼承過去，所以要各設一次。
+function applyCaptionScale() {
+  const value = String(state.captionScale);
+  document.body.style.setProperty("--capScale", value);
+  if (state.pipWindow) state.pipWindow.document.body.style.setProperty("--capScale", value);
+}
+
+/* ── 字幕拖動 ──────────────────────────────────────────────────
+   像 YouTube 字幕那樣用滑鼠抓著搬。位移記在 localStorage，下次上台還在原地。
+   會夾在畫面內，免得拖出去之後找不回來（真的弄丟了還有面板的「字幕位置歸位」）。 */
+function applyCaptionPosition() {
+  elements.captionLayer.style.setProperty("--capX", `${state.capX}px`);
+  elements.captionLayer.style.setProperty("--capY", `${state.capY}px`);
+}
+
+function clampCaptionPosition() {
+  const stage = elements.stageView.getBoundingClientRect();
+  const layer = elements.captionLayer.getBoundingClientRect();
+  if (!stage.width || !layer.width) return;
+  const margin = 8;
+  // 先把位移退回去，算出「沒被拖過」時的位置，再夾出合法範圍
+  const baseLeft = layer.left - state.capX;
+  const baseTop = layer.top - state.capY;
+  const minX = stage.left + margin - baseLeft;
+  const maxX = stage.right - margin - layer.width - baseLeft;
+  const minY = stage.top + margin - baseTop;
+  const maxY = stage.bottom - margin - layer.height - baseTop;
+  state.capX = maxX < minX ? (minX + maxX) / 2 : Math.min(maxX, Math.max(minX, state.capX));
+  state.capY = maxY < minY ? (minY + maxY) / 2 : Math.min(maxY, Math.max(minY, state.capY));
+  applyCaptionPosition();
+}
+
+function startCaptionDrag(event) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  const startX = event.clientX - state.capX;
+  const startY = event.clientY - state.capY;
+  elements.captionLayer.classList.add("dragging");
+  event.target.setPointerCapture?.(event.pointerId);
+
+  const move = (moveEvent) => {
+    state.capX = moveEvent.clientX - startX;
+    state.capY = moveEvent.clientY - startY;
+    applyCaptionPosition();
+  };
+  const end = () => {
+    document.removeEventListener("pointermove", move);
+    document.removeEventListener("pointerup", end);
+    document.removeEventListener("pointercancel", end);
+    elements.captionLayer.classList.remove("dragging");
+    clampCaptionPosition();
+    localStorage.setItem("liveCaptionX", String(Math.round(state.capX)));
+    localStorage.setItem("liveCaptionY", String(Math.round(state.capY)));
+  };
+  document.addEventListener("pointermove", move);
+  document.addEventListener("pointerup", end);
+  document.addEventListener("pointercancel", end);
+}
+
+function resetCaptionPosition() {
+  state.capX = 0;
+  state.capY = 0;
+  localStorage.removeItem("liveCaptionX");
+  localStorage.removeItem("liveCaptionY");
+  applyCaptionPosition();
+  toast("字幕位置已歸位。");
+}
+
+// 強制一行：量完內容寬度，塞不下就往下壓字級，不換行。
+function fitCaption(element) {
+  if (!element || element.classList.contains("hidden")) return;
+  element.style.setProperty("--capFit", "1");
+  // 容器現在是貼著內容的，量它沒意義——直接算螢幕給得起的寬度（對齊 CSS 的 max-width）
+  const available = Math.min(elements.stageView.clientWidth * .94, 1740);
+  const needed = element.scrollWidth;
+  if (!available || !needed || needed <= available) return;
+  element.style.setProperty("--capFit", String(Math.max(CAP_FIT_MIN, (available / needed) * .98)));
 }
 
 function swapCaption() {
@@ -304,14 +541,18 @@ function swapCaption() {
 
 function updateCaptionViews() {
   elements.targetCaption.textContent = state.currentTarget || "";
-  if (!state.currentTarget) {
+  // 還沒開始翻譯就整個不顯示——投影幕就是這個畫面，沒必要讓台下看到說明文字。
+  // 只有已經在聽、還沒收到句子時才給講者一個「有在跑」的訊號。
+  if (!state.currentTarget && state.running) {
     const placeholder = document.createElement("span");
     placeholder.className = "caption-placeholder";
-    placeholder.textContent = state.running ? "正在聆聽中文…" : "按「開始翻譯」後，字幕會出現在這裡";
+    placeholder.textContent = "正在聆聽中文…";
     elements.targetCaption.appendChild(placeholder);
   }
   elements.sourceCaption.textContent = state.currentSource || "";
   elements.sourceCaption.classList.toggle("hidden", !state.showSource || !state.currentSource);
+  fitCaption(elements.targetCaption);
+  fitCaption(elements.sourceCaption);
   if (state.pipTarget) state.pipTarget.textContent = state.currentTarget || "等待下一句…";
   if (state.pipSource) {
     state.pipSource.textContent = state.currentSource;
@@ -322,10 +563,11 @@ function updateCaptionViews() {
 
 function addTargetText(text) {
   if (!text) return;
-  // 塞滿一頁就整頁換新，從新片段重顯示；新頁開頭帶淡入，像電視字幕一句句換。
-  if (state.currentTarget.length + text.length > PAGE_CHARS) state.currentTarget = "";
+  // 塞滿一行就整行換新，從新片段重顯示；新行開頭帶淡入，像電視字幕一句句換。
+  if (displayWidth(state.currentTarget + text) > PAGE_WIDTH) state.currentTarget = "";
   if (state.currentTarget === "") swapCaption();
   state.currentTarget += text;
+  state.lastCaptionAt = Date.now();
   updateCaptionViews();
 }
 
@@ -333,6 +575,7 @@ function addSourceText(text) {
   if (!text) return;
   state.currentSource += text;
   if (state.currentSource.length > 180) state.currentSource = state.currentSource.slice(-180);
+  state.lastCaptionAt = Date.now();
   updateCaptionViews();
 }
 
@@ -418,6 +661,7 @@ async function startTranslation() {
     elements.translateBtn.classList.add("running");
     elements.translateBtn.querySelector("strong").textContent = "停止翻譯";
     connectWebSocket();
+    startSilenceWatch();
     updateCaptionViews();
   } catch (error) {
     const message = `無法啟動麥克風：${error.message}`;
@@ -429,6 +673,7 @@ async function startTranslation() {
 
 function stopTranslation(showIdle = true, preserveStatus = false) {
   state.running = false;
+  stopSilenceWatch();
   if (state.reconnectTimer) clearTimeout(state.reconnectTimer);
   state.reconnectTimer = null;
   if (state.websocket) {
@@ -451,13 +696,41 @@ function stopTranslation(showIdle = true, preserveStatus = false) {
   updateCaptionViews();
 }
 
+/* 上台前先把麥克風叫醒一次。
+   2026-07-28 SAM 實戰：沒先按過「測試聲音」就上台，按翻譯後完全沒字幕；
+   回設定頁測過麥克風再上台就正常。兩者唯一的差別就是「這個 session 有沒有呼叫過
+   getUserMedia」——權限還沒給、或存下來的裝置 ID 已經失效，都會在這一步才爆。
+   與其讓它在台上爆，不如在還沒上台時先試一次，順便驗證裝置是真的能用。 */
+async function warmUpMicrophone() {
+  if (state.micTestStream) return true;   // 剛測過就不用再借一次
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints());
+    stream.getTracks().forEach((track) => track.stop());
+    await loadMicrophones(false);         // 有權限後裝置清單才拿得到真名字與 ID
+    return true;
+  } catch (error) {
+    // 存起來的裝置不見了就退回預設麥克風再試一次，不要整個擋住
+    if (state.micId) {
+      state.micId = "";
+      localStorage.removeItem("liveCaptionMic");
+      elements.micSelect.value = "";
+      elements.stageMicSelect.value = "";
+      return warmUpMicrophone();
+    }
+    setSetupError(`麥克風沒辦法使用：${error.message}。請在「聲音與連線」按一次「測試聲音」確認。`);
+    return false;
+  }
+}
+
 async function enterStage() {
   if (!state.deck || !state.hasApiKey) return;
+  if (!await warmUpMicrophone()) return;
   if (state.micTestStream) toggleMicTest();
   elements.setupView.classList.add("hidden");
   elements.stageView.classList.remove("hidden");
   applyStagePreferences();
   showPage(1);
+  wakeControls();
   try {
     await elements.stageView.requestFullscreen();
   } catch (_error) {
@@ -468,14 +741,41 @@ async function enterStage() {
 function leaveStage() {
   stopTranslation();
   closeSettings();
+  sleepControlsNow();
+  hideStageAlert();
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   elements.stageView.classList.add("hidden");
   elements.fullscreenPrompt.classList.add("hidden");
   elements.setupView.classList.remove("hidden");
 }
 
+/* ── 危險動作要按兩次 ──────────────────────────────────────────
+   「更換 PDF」和「離開簡報」會把講者踢出簡報，上台中誤按一次就完了。 */
+const dangerTimers = new Map();
+
+function resetDanger(button) {
+  clearTimeout(dangerTimers.get(button));
+  dangerTimers.delete(button);
+  button.classList.remove("confirming");
+  button.textContent = button.dataset.label;
+}
+
+function armDanger(button, action) {
+  button.addEventListener("click", () => {
+    if (button.classList.contains("confirming")) {
+      resetDanger(button);
+      action();
+      return;
+    }
+    document.querySelectorAll(".drawer-action.danger.confirming").forEach(resetDanger);
+    button.classList.add("confirming");
+    button.textContent = button.dataset.confirm;
+    dangerTimers.set(button, setTimeout(() => resetDanger(button), 4000));
+  });
+}
+
 function openSettings() {
-  elements.stageView.classList.add("controls-visible");
+  wakeControls();
   elements.settingsDrawer.removeAttribute("inert");
   elements.settingsDrawer.classList.add("open");
   elements.settingsDrawer.setAttribute("aria-hidden", "false");
@@ -483,7 +783,7 @@ function openSettings() {
 }
 
 function closeSettings() {
-  elements.stageView.classList.remove("controls-visible");
+  document.querySelectorAll(".drawer-action.danger.confirming").forEach(resetDanger);
   elements.settingsDrawer.classList.remove("open");
   if (elements.settingsDrawer.contains(document.activeElement)) document.activeElement.blur();
   elements.settingsDrawer.setAttribute("inert", "");
@@ -497,18 +797,18 @@ function toggleSettings() {
 }
 
 function applyStagePreferences() {
-  state.captionScale = Number.isFinite(state.captionScale) ? Math.max(.65, Math.min(1.5, state.captionScale)) : 1;
-  applyCaptionFontSizes(elements.targetCaption, elements.sourceCaption);
-  applyCaptionFontSizes(state.pipTarget, state.pipSource, true);
+  state.captionScale = Number.isFinite(state.captionScale) ? Math.max(.4, Math.min(1.8, state.captionScale)) : .9;
+  applyCaptionScale();
   elements.captionSizeText.textContent = `${Math.round(state.captionScale * 100)}%`;
   elements.zhToggleBtn.classList.toggle("on", state.showSource);
   elements.zhToggleBtn.setAttribute("aria-checked", String(state.showSource));
+  applyCaptionPosition();
   selectLanguage(state.language);
   updateCaptionViews();
 }
 
 function changeCaptionScale(delta) {
-  state.captionScale = Math.max(.65, Math.min(1.5, state.captionScale + delta));
+  state.captionScale = Math.max(.4, Math.min(1.8, state.captionScale + delta));
   localStorage.setItem("liveCaptionScale", String(state.captionScale));
   applyStagePreferences();
 }
@@ -550,7 +850,7 @@ async function toggleCaptionWindow() {
     state.pipTarget.className = "caption-page-target";
     main.append(state.pipSource, state.pipTarget);
     pip.document.body.appendChild(main);
-    applyCaptionFontSizes(state.pipTarget, state.pipSource, true);
+    applyCaptionScale();
     updateCaptionViews();
     elements.captionWindowBtn.classList.add("active");
     pip.addEventListener("pagehide", () => {
@@ -583,7 +883,13 @@ function syncFullscreenUi() {
   elements.fullscreenPrompt.classList.toggle("hidden", isFullscreen || !stageIsVisible);
 }
 
-document.querySelectorAll(".language-option").forEach((button) => button.addEventListener("click", () => selectLanguage(button.dataset.lang)));
+/* ── 事件接線 ────────────────────────────────────────────────── */
+
+document.querySelectorAll(".check-row").forEach((row) => {
+  row.addEventListener("click", () => toggleCheckItem(row.closest(".check-item")));
+});
+document.querySelectorAll(".segment").forEach((button) => button.addEventListener("click", () => selectLanguage(button.dataset.lang)));
+
 elements.editKeyBtn.addEventListener("click", () => {
   elements.keyForm.classList.toggle("hidden");
   if (!elements.keyForm.classList.contains("hidden")) elements.apiKeyInput.focus();
@@ -604,6 +910,7 @@ elements.keyForm.addEventListener("submit", async (event) => {
     setSetupError(error.message || "API key 設定失敗。")
   }
 });
+
 elements.pdfInput.addEventListener("change", () => uploadPdf(elements.pdfInput.files[0]));
 elements.dropZone.addEventListener("dragover", (event) => { event.preventDefault(); elements.dropZone.classList.add("dragging"); });
 elements.dropZone.addEventListener("dragleave", () => elements.dropZone.classList.remove("dragging"));
@@ -616,6 +923,7 @@ elements.enterStageBtn.addEventListener("click", enterStage);
   localStorage.setItem("liveCaptionMic", state.micId);
   elements.micSelect.value = state.micId;
   elements.stageMicSelect.value = state.micId;
+  updateReadiness();
   if (state.running) {
     stopTranslation();
     toast("麥克風已更換，請重新開始翻譯。")
@@ -628,22 +936,28 @@ elements.stageLanguageSelect.addEventListener("change", (event) => {
     toast("字幕語言已更換，請重新開始翻譯。")
   }
 });
+
 elements.translateBtn.addEventListener("click", () => state.running ? stopTranslation() : startTranslation());
 elements.zhToggleBtn.addEventListener("click", toggleSource);
 elements.captionWindowBtn.addEventListener("click", toggleCaptionWindow);
 elements.fullscreenBtn.addEventListener("click", toggleFullscreen);
 elements.fullscreenPrompt.addEventListener("click", toggleFullscreen);
-elements.settingsBtn.addEventListener("click", openSettings);
+elements.settingsBtn.addEventListener("click", toggleSettings);
 elements.closeSettingsBtn.addEventListener("click", closeSettings);
 elements.drawerBackdrop.addEventListener("click", closeSettings);
 elements.smallerBtn.addEventListener("click", () => changeCaptionScale(-.1));
 elements.largerBtn.addEventListener("click", () => changeCaptionScale(.1));
-elements.replacePdfBtn.addEventListener("click", () => { leaveStage(); setTimeout(() => elements.pdfInput.click(), 100); });
-elements.leaveStageBtn.addEventListener("click", leaveStage);
+armDanger(elements.replacePdfBtn, () => { leaveStage(); setTimeout(() => elements.pdfInput.click(), 100); });
+armDanger(elements.leaveStageBtn, leaveStage);
+
 elements.stageSurface.addEventListener("click", (event) => {
   if (event.clientX < window.innerWidth / 3) showPage(state.page - 1);
   else showPage(state.page + 1);
 });
+elements.stageView.addEventListener("pointermove", maybeWakeFromPointer);
+[elements.targetCaption, elements.sourceCaption].forEach((caption) =>
+  caption.addEventListener("pointerdown", startCaptionDrag));
+elements.resetCaptionPosBtn.addEventListener("click", resetCaptionPosition);
 
 document.addEventListener("fullscreenchange", () => {
   syncFullscreenUi();
@@ -651,7 +965,12 @@ document.addEventListener("fullscreenchange", () => {
 });
 document.addEventListener("keydown", (event) => {
   if (elements.stageView.classList.contains("hidden")) return;
-  if (event.isComposing) return;   // 中文輸入法組字中，別攔快捷鍵
+  // 這裡本來有 `if (event.isComposing) return;`，想擋的是注音組字中誤觸快捷鍵，
+  // 實際效果是注音一開著就整組快捷鍵失效（+/- 調不動字級就是這樣來的）。
+  // 中研院實戰版沒有這道檢查，改回它的做法：只擋輸入框，其餘照收。
+  if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+  // 快捷鍵一律不喚醒控制列。報告中翻頁、調字級是家常便飯，
+  // 每按一次就把控制列彈到投影幕上，台下全看得到。
   const key = event.key.toLowerCase();
   if (key === "s") {
     toggleSettings();
@@ -670,7 +989,6 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     return;
   }
-  if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
   if (key === "m") state.running ? stopTranslation() : startTranslation();
   else if (key === "c") toggleSource();
   else if (key === "p") toggleCaptionWindow();
@@ -694,9 +1012,10 @@ window.addEventListener("beforeunload", () => {
   stopTranslation(false);
   stopMeter("micTestFrame", "micTestContext", "micTestStream", elements.setupMeter);
 });
+// 字級是 vw，視窗變大變小 CSS 自己會跟；這裡只要重量一次寬度、順便把拖出去的字幕拉回畫面內。
 window.addEventListener("resize", () => {
-  applyCaptionFontSizes(elements.targetCaption, elements.sourceCaption);
   updateCaptionViews();
+  clampCaptionPosition();
 });
 navigator.mediaDevices?.addEventListener?.("devicechange", () => loadMicrophones(false));
 
@@ -704,4 +1023,4 @@ selectLanguage(state.language);
 applyStagePreferences();
 loadConfig();
 loadMicrophones(false);
-updateProgress();
+updateReadiness();

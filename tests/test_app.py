@@ -78,12 +78,32 @@ class LiveCaptionAppTest(unittest.TestCase):
             self.assertEqual(response.headers["X-Frame-Options"], "DENY")
 
     def test_stage_uses_clean_fullscreen_controls(self):
+        """投影幕就是講者的螢幕，所以舞台預設不能有任何常駐介面。
+
+        控制列與斷線橫幅都存在，但初始狀態是收起來的，靠 JS 依情況叫出來。
+        """
         html = self.client.get("/").get_data(as_text=True)
-        self.assertIn("進入全螢幕簡報", html)
-        self.assertIn('class="stage-edge-handle"', html)
+        self.assertIn('id="stageControls"', html)
+        self.assertIn('id="translateBtn"', html)
         self.assertIn('id="fullscreenPrompt"', html)
+        # 斷線橫幅預設隱藏，只有連線出問題才滑下來
+        self.assertIn('class="stage-alert hidden"', html)
+        # 這些是拿掉的舊設計，別再長回來
+        self.assertNotIn("stage-edge-handle", html)
         self.assertNotIn('class="stage-header"', html)
         self.assertNotIn('id="overlayToggle"', html)
+
+    def test_setup_page_is_a_three_item_checklist(self):
+        html = self.client.get("/").get_data(as_text=True)
+        for item in ('id="pdfItem"', 'id="langItem"', 'id="soundItem"'):
+            self.assertIn(item, html)
+        self.assertIn("/ 3 就緒", html)
+        # 專有名詞功能已於 2026-07-28 整套移除，不要再冒出來
+        self.assertNotIn("termsToggle", html)
+        self.assertNotIn("專有名詞", html)
+
+    def test_terms_endpoint_is_gone(self):
+        self.assertEqual(self.client.get("/api/terms").status_code, 404)
 
     def test_rejects_cross_site_mutations_but_allows_local_origin(self):
         rejected = self.client.post(

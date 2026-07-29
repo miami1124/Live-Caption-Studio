@@ -22,10 +22,29 @@ URL = f"http://127.0.0.1:{PORT}"
 OPEN_BROWSER = os.getenv("NO_BROWSER", "").strip().lower() not in {"1", "true", "yes"}
 
 
+MIN_PYTHON = (3, 10)
+
+
 def venv_python() -> Path:
     if os.name == "nt":
         return VENV_DIR / "Scripts" / "python.exe"
     return VENV_DIR / "bin" / "python"
+
+
+def check_python_version() -> bool:
+    """版本太舊要在這裡擋下來。
+
+    不擋的話使用者會看到一整頁 pip 的編譯錯誤，完全猜不到真正的原因是版本。
+    """
+    if sys.version_info >= MIN_PYTHON:
+        return True
+    current = ".".join(str(part) for part in sys.version_info[:3])
+    needed = ".".join(str(part) for part in MIN_PYTHON)
+    print(f"\n這個工具需要 Python {needed} 以上，但目前執行的是 Python {current}。")
+    print("請到 https://www.python.org/downloads/ 安裝新版後再試一次。")
+    if os.name == "nt":
+        print("（Windows 安裝時記得勾選「Add Python to PATH」）")
+    return False
 
 
 def prepare_environment() -> Path:
@@ -62,6 +81,8 @@ def wait_until_ready(process: subprocess.Popen) -> bool:
 
 
 def main() -> int:
+    if not check_python_version():
+        return 1
     try:
         python = prepare_environment()
     except (OSError, subprocess.CalledProcessError) as error:
@@ -72,7 +93,7 @@ def main() -> int:
     print(f"[3/3] 啟動 Live Caption Studio：{URL}")
     process = subprocess.Popen([str(python), str(ROOT / "app.py")], cwd=ROOT)
     if not wait_until_ready(process):
-        print("\n程式無法啟動。可能是 5090 埠已被占用，請關閉舊版本後再試。")
+        print(f"\n程式無法啟動。可能是 {PORT} 埠已被占用，請關閉舊版本後再試。")
         if process.poll() is None:
             process.terminate()
         return 1

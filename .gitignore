@@ -17,3 +17,6 @@ htmlcov/
 *.log
 tmp/
 temp/
+
+# 內部決策紀錄，不要跟著公開 repo 一起發出去
+docs/

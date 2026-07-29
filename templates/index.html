@@ -14,6 +14,7 @@
   <a class="skip-link" href="#mainContent">跳到主要內容</a>
 
   <main id="mainContent">
+    <!-- 開始前設定：三項、一項一盞燈，全綠才放行。清單本身就是設定。 -->
     <section class="setup-view" id="setupView" aria-labelledby="setupTitle">
       <header class="app-header">
         <div class="app-header-inner">
@@ -21,141 +22,181 @@
             <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
             <span>Live Caption Studio</span>
           </a>
-          <div class="local-badge"><span></span>在你的電腦本機執行</div>
         </div>
       </header>
 
-      <div class="setup-layout">
-        <section class="setup-panel" aria-labelledby="setupTitle">
-          <div class="panel-heading">
+      <div class="checklist-wrap">
+        <div class="checklist-card">
+          <div class="checklist-head">
             <div>
-              <p class="eyebrow">中文簡報 · 即時多語字幕</p>
-              <h1 id="setupTitle">上傳 PDF，開始即時翻譯簡報</h1>
-              <p class="intro-copy">說中文，畫面即時顯示英文、日文或韓文字幕。</p>
+              <h1 id="setupTitle">開始前設定</h1>
+              <p>完成以下設定後即可開始</p>
             </div>
+            <span class="ready-count"><b id="readyCount">0</b> / 3 就緒</span>
           </div>
 
-          <section class="setup-block upload-block" id="pdfBlock">
-            <div class="block-content">
-              <div class="block-title-row"><div><h2>選擇 PDF 簡報</h2><p>最多 50 MB、200 頁，檔案只在本機處理</p></div><span class="check-mark" aria-hidden="true">✓</span></div>
-              <label class="drop-zone" id="dropZone" for="pdfInput">
-                <input id="pdfInput" type="file" accept="application/pdf,.pdf">
-                <span class="upload-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+          <div class="check-list">
+            <section class="check-item" id="pdfItem">
+              <button type="button" class="check-row" id="pdfRow" aria-expanded="false" aria-controls="pdfBody">
+                <span class="lamp" aria-hidden="true">✓</span>
+                <span class="check-main">
+                  <strong>簡報檔案</strong>
+                  <small id="pdfSummary">還沒選檔案 · PDF、最多 200 頁，只在這台電腦處理</small>
                 </span>
-                <span class="drop-main">拖曳 PDF 到這裡，或按一下選擇檔案</span>
-                <span class="drop-meta" id="pdfMeta">檔案只會留在本機</span>
-              </label>
-            </div>
-          </section>
-
-          <section class="setup-block" id="languageBlock">
-            <div class="block-content">
-              <div class="block-title-row"><div><h2>字幕語言</h2><p>你只需要說中文</p></div><span class="check-mark always" aria-hidden="true">✓</span></div>
-              <div class="language-options" role="radiogroup" aria-label="目標語言">
-                <button type="button" class="language-option selected" data-lang="en" role="radio" aria-checked="true"><span>EN</span><strong>English</strong><small>英文</small></button>
-                <button type="button" class="language-option" data-lang="ja" role="radio" aria-checked="false"><span>JA</span><strong>日本語</strong><small>日文</small></button>
-                <button type="button" class="language-option" data-lang="ko" role="radio" aria-checked="false"><span>KO</span><strong>한국어</strong><small>韓文</small></button>
+                <span class="check-act" id="pdfAct">選擇檔案</span>
+              </button>
+              <div class="check-body" id="pdfBody">
+                <label class="drop-zone" id="dropZone" for="pdfInput">
+                  <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+                  <span class="upload-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+                  </span>
+                  <span class="drop-text">
+                    <span class="drop-main">拖曳 PDF 到這裡，或按一下選擇檔案</span>
+                    <span class="drop-meta" id="pdfMeta">用 Keynote 或 Google Slides？先匯出成 PDF</span>
+                  </span>
+                </label>
               </div>
-            </div>
-          </section>
+            </section>
 
-          <section class="setup-block" id="connectionBlock">
-            <div class="block-content">
-              <div class="block-title-row"><div><h2>連線與麥克風</h2><p>使用你自己的 Gemini API key</p></div><span class="check-mark" aria-hidden="true">✓</span></div>
-
-              <div class="key-row" id="keyRow">
-                <div class="key-status"><span class="status-orb" id="keyOrb"></span><div><strong id="keyStatusTitle">檢查 API key 中</strong><small id="keyStatusText">請稍候</small></div></div>
-                <button type="button" class="text-button" id="editKeyBtn">設定</button>
+            <section class="check-item" id="langItem">
+              <button type="button" class="check-row" id="langRow" aria-expanded="false" aria-controls="langBody">
+                <span class="lamp on" aria-hidden="true">✓</span>
+                <span class="check-main">
+                  <strong>字幕語言</strong>
+                  <small id="langSummary">English · 台下看到的是英文字幕</small>
+                </span>
+                <span class="check-act">更改</span>
+              </button>
+              <div class="check-body" id="langBody">
+                <div class="segmented" role="radiogroup" aria-label="字幕語言">
+                  <button type="button" class="segment selected" data-lang="en" role="radio" aria-checked="true">English</button>
+                  <button type="button" class="segment" data-lang="ja" role="radio" aria-checked="false">日本語</button>
+                  <button type="button" class="segment" data-lang="ko" role="radio" aria-checked="false">한국어</button>
+                </div>
+                <p class="body-hint">你只需要說中文，這是台下會看到的語言。</p>
               </div>
-              <form class="key-form hidden" id="keyForm">
-                <label for="apiKeyInput">Gemini API key</label>
-                <div class="input-action-row"><input id="apiKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="貼上你的 API key"><button type="submit">套用</button></div>
-                <p>這次關閉程式後會自動清除。想固定使用可填入 <code>.env</code>。</p>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">前往 Google AI Studio 取得 API key ↗</a>
-              </form>
+            </section>
 
-              <div class="mic-row">
-                <label for="micSelect">麥克風</label>
-                <select id="micSelect"><option value="">預設麥克風</option></select>
-                <button type="button" class="secondary-button" id="micTestBtn">測試聲音</button>
-                <div class="meter" aria-label="麥克風音量"><span id="setupMeter"></span></div>
+            <section class="check-item" id="soundItem">
+              <button type="button" class="check-row" id="soundRow" aria-expanded="false" aria-controls="soundBody">
+                <span class="lamp" aria-hidden="true">✓</span>
+                <span class="check-main">
+                  <strong>聲音與連線</strong>
+                  <small id="soundSummary">正在檢查麥克風與 Gemini API key</small>
+                </span>
+                <span class="check-act">測試聲音</span>
+              </button>
+              <div class="check-body" id="soundBody">
+                <div class="key-row" id="keyRow">
+                  <div class="key-status">
+                    <span class="status-orb" id="keyOrb"></span>
+                    <div><strong id="keyStatusTitle">檢查 API key 中</strong><small id="keyStatusText">請稍候</small></div>
+                  </div>
+                  <button type="button" class="text-button" id="editKeyBtn">設定</button>
+                </div>
+                <form class="key-form hidden" id="keyForm">
+                  <label for="apiKeyInput">Gemini API key</label>
+                  <div class="input-action-row">
+                    <input id="apiKeyInput" type="password" autocomplete="off" spellcheck="false" placeholder="貼上你的 API key">
+                    <button type="submit">套用</button>
+                  </div>
+                  <p>這次關閉程式後會自動清除。想固定使用可填入 <code>.env</code>。</p>
+                  <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">前往 Google AI Studio 取得 API key ↗</a>
+                </form>
+
+                <div class="mic-row">
+                  <label for="micSelect">麥克風</label>
+                  <select id="micSelect"><option value="">預設麥克風</option></select>
+                </div>
+                <div class="mic-test">
+                  <button type="button" class="inline-primary" id="micTestBtn">
+                    <span class="test-icon" aria-hidden="true"></span><span id="micTestLabel">測試聲音</span>
+                  </button>
+                  <div class="meter" aria-label="麥克風音量"><span id="setupMeter"></span></div>
+                </div>
+                <p class="body-hint">現在就可以測。說一句話看看，右邊的條會跳就代表收得到聲音。</p>
               </div>
-            </div>
-          </section>
+            </section>
+          </div>
 
-          <button type="button" class="primary-button" id="enterStageBtn" disabled>
-            <span>進入全螢幕簡報</span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
-          </button>
+          <button type="button" class="enter-stage" id="enterStageBtn" disabled>正在檢查設定…</button>
           <p class="setup-error" id="setupError" role="alert"></p>
-        </section>
-
-        <aside class="readiness-panel" aria-labelledby="readinessTitle">
-          <div class="readiness-heading">
-            <h2 id="readinessTitle">開始前確認</h2>
-            <span class="progress-text" id="progressText">1 / 3 完成</span>
-          </div>
-          <div class="readiness-list">
-            <div class="readiness-item" id="pdfReadyItem"><span class="readiness-check">✓</span><div><strong>PDF 簡報</strong><small>尚未選擇檔案</small></div></div>
-            <div class="readiness-item ready" id="languageReadyItem"><span class="readiness-check">✓</span><div><strong>字幕語言</strong><small id="languageReadyText">English · 英文</small></div></div>
-            <div class="readiness-item" id="keyReadyItem"><span class="readiness-check">✓</span><div><strong>Gemini API key</strong><small>正在檢查</small></div></div>
-          </div>
-
-          <div class="privacy-note">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 6v5.2c0 4.5-2.7 7.8-7 9.3-4.3-1.5-7-4.8-7-9.3V6l7-2.5Z"/><path d="m9 12 2 2 4-5"/></svg>
-            <div><strong>資料怎麼流動？</strong><p>PDF 只在本機處理；開始翻譯後，麥克風音訊會傳送至 Google Gemini。</p></div>
-          </div>
-
-          <div class="shortcut-note">
-            <span>簡報快捷鍵</span>
-            <p><kbd>M</kbd> 翻譯　<kbd>S</kbd> 顯示設定　<kbd>＋</kbd><kbd>－</kbd> 字幕大小</p>
-          </div>
-        </aside>
+        </div>
       </div>
     </section>
 
+    <!-- 上台頁：投影幕就是這個畫面，所以預設什麼都不顯示。
+         控制列要滑鼠動一下才浮出來，斷線才會有橫幅。 -->
     <section class="stage-view hidden" id="stageView" aria-label="簡報舞台">
       <div class="stage-surface" id="stageSurface">
-        <img id="slideImage" alt="目前的投影片">
+        <!-- 空白起手式：投影片是選檔後才由 JS 換上去的，先給透明 1×1 免得瀏覽器畫出破圖框 -->
+        <img class="hidden" id="slideImage" alt="目前的投影片"
+             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
         <div class="slide-loader hidden" id="slideLoader"><span></span><p>正在準備投影片</p></div>
       </div>
 
-      <button type="button" class="stage-edge-handle" id="settingsBtn" aria-label="開啟控制面板" title="控制面板（S）">
-        <span aria-hidden="true">‹</span><strong>控制</strong>
-      </button>
+      <div class="stage-alert hidden" id="stageAlert" role="status">
+        <span class="alert-dot" aria-hidden="true"></span><strong id="stageAlertText">翻譯連線中斷，正在重新連線…</strong>
+      </div>
 
       <button type="button" class="fullscreen-prompt hidden" id="fullscreenPrompt">
-        <span>進入全螢幕簡報</span><kbd>F</kbd>
+        <span>進入全螢幕</span><kbd>F</kbd>
       </button>
 
       <div class="caption-layer" id="captionLayer" aria-live="polite">
         <div class="source-caption hidden" id="sourceCaption"></div>
-        <div class="target-caption" id="targetCaption"><span class="caption-placeholder">按「開始翻譯」後，字幕會出現在這裡</span></div>
+        <div class="target-caption" id="targetCaption"></div>
+      </div>
+
+      <div class="stage-controls" id="stageControls">
+        <button type="button" class="control-translate" id="translateBtn">
+          <span class="translate-dot" aria-hidden="true"></span><strong>開始翻譯</strong><kbd>M</kbd>
+        </button>
+        <span class="control-divider" aria-hidden="true"></span>
+        <div class="control-size">
+          <button type="button" id="smallerBtn" aria-label="縮小字幕">A−</button>
+          <span id="captionSizeText">100%</span>
+          <button type="button" id="largerBtn" aria-label="放大字幕">A+</button>
+        </div>
+        <span class="control-divider" aria-hidden="true"></span>
+        <button type="button" class="control-more" id="settingsBtn" aria-label="開啟設定">
+          <span>設定</span><kbd>S</kbd>
+        </button>
       </div>
 
       <aside class="settings-drawer" id="settingsDrawer" aria-hidden="true" inert>
-        <div class="drawer-header"><div><span>簡報控制</span><h2>控制面板</h2></div><button type="button" class="icon-button" id="closeSettingsBtn" aria-label="關閉設定"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+        <div class="drawer-header">
+          <h2>設定</h2>
+          <button type="button" class="icon-button" id="closeSettingsBtn" aria-label="關閉設定"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+        </div>
         <div class="drawer-content">
-          <div class="live-status" id="liveStatus"><span></span><strong>尚未開始</strong></div>
-          <button type="button" class="drawer-translate-button" id="translateBtn"><span class="translate-dot"></span><strong>開始翻譯</strong><kbd>M</kbd></button>
-
           <label class="field-label" for="stageLanguageSelect">字幕語言</label>
           <select id="stageLanguageSelect"><option value="en">English · 英文</option><option value="ja">日本語 · 日文</option><option value="ko">한국어 · 韓文</option></select>
 
           <label class="field-label" for="stageMicSelect">麥克風</label>
           <select id="stageMicSelect"><option value="">預設麥克風</option></select>
 
-          <div class="setting-group"><span class="field-label">字幕大小</span><div class="size-control"><button type="button" id="smallerBtn" aria-label="縮小字幕">A−</button><span id="captionSizeText">100%</span><button type="button" id="largerBtn" aria-label="放大字幕">A＋</button></div></div>
+          <div class="setting-switch">
+            <div><strong>顯示中文對照</strong><small>在翻譯字幕上方顯示中文辨識內容</small></div>
+            <button type="button" class="switch" id="zhToggleBtn" role="switch" aria-checked="false"><span></span></button>
+          </div>
 
-          <div class="setting-switch"><div><strong>顯示中文對照</strong><small>在翻譯字幕上方顯示中文辨識內容</small></div><button type="button" class="switch" id="zhToggleBtn" role="switch" aria-checked="false"><span></span></button></div>
-
+          <button type="button" class="drawer-action" id="resetCaptionPosBtn">字幕位置歸位</button>
           <button type="button" class="drawer-action" id="captionWindowBtn">開啟字幕浮窗 <span>↗</span></button>
           <button type="button" class="drawer-action" id="fullscreenBtn"><span>切換全螢幕</span><kbd>F</kbd></button>
-          <button type="button" class="drawer-action" id="replacePdfBtn">更換 PDF 簡報</button>
-          <button type="button" class="drawer-action danger" id="leaveStageBtn">離開簡報</button>
+
+          <div class="drawer-danger">
+            <button type="button" class="drawer-action danger" id="replacePdfBtn" data-label="更換 PDF 簡報" data-confirm="再按一次：離開並換檔案">更換 PDF 簡報</button>
+            <button type="button" class="drawer-action danger" id="leaveStageBtn" data-label="離開簡報" data-confirm="再按一次就離開簡報">離開簡報</button>
+          </div>
         </div>
-        <div class="shortcut-list"><span>快捷鍵</span><p><kbd>M</kbd> 翻譯　<kbd>S</kbd> 面板　<kbd>＋</kbd><kbd>－</kbd> 字幕大小</p><p><kbd>C</kbd> 中文　<kbd>P</kbd> 浮窗　<kbd>F</kbd> 全螢幕　<kbd>←</kbd><kbd>→</kbd> 翻頁</p></div>
+        <div class="shortcut-list">
+          <span>快捷鍵</span>
+          <p><kbd>M</kbd> 翻譯　<kbd>S</kbd> 設定　<kbd>＋</kbd><kbd>－</kbd> 字幕大小</p>
+          <p><kbd>C</kbd> 中文　<kbd>P</kbd> 浮窗　<kbd>F</kbd> 全螢幕　<kbd>←</kbd><kbd>→</kbd> 翻頁</p>
+          <p class="shortcut-tip">字幕可以用滑鼠拖到你想要的位置。</p>
+        </div>
       </aside>
       <button class="drawer-backdrop hidden" id="drawerBackdrop" aria-label="關閉設定"></button>
     </section>
