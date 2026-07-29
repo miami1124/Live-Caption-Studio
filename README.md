@@ -25,7 +25,6 @@ Windows 安裝時如果看到「Add Python to PATH」，勾起來比較保險，
 
 到 [Google AI Studio](https://aistudio.google.com/app/apikey) 建立一組。免費額度就能用，用量與費用都算在你自己的 Google 專案上。
 
-> Google 正在把 API key 遷移到新的 Authorization key。建議直接建立最新類型的 key，舊的 Standard key 未來可能失效。
 
 ### 3. 啟動
 
