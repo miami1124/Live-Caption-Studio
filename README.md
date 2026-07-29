@@ -20,12 +20,24 @@
 ```text
 請幫我安裝這個工具：https://github.com/miami1124/gemini-live-caption
 
-請先讀該 repo 的 AGENTS.md 再動作，裡面有完整安裝流程和各系統的已知地雷。
+請先讀該 repo 的 AGENTS.md 再動作（如果你是 Claude Code，讀 CLAUDE.md），
+裡面有完整安裝流程和各系統的已知地雷。
 
-特別注意這兩點，實測最常卡在這裡：
-1. Windows 要先確認 Python 不是 Microsoft Store 版（AGENTS.md 裡有檢查方法），
-   是的話要先改裝 python.org 官方版，否則虛擬環境一定建不起來
-2. 所有指令都必須在專案資料夾內執行，不要在家目錄下指令
+請先確認我的作業系統，再照對應的注意事項處理：
+
+【Windows】
+先跑 where python 檢查。路徑含 WindowsApps 就是 Microsoft Store 版，
+它缺少 ensurepip，虛擬環境一定建不起來，必須先改裝 python.org 官方版。
+
+【macOS】
+start.command 第一次要用「右鍵 → 打開」，直接雙擊會被 Gatekeeper 擋下。
+必要時先執行 chmod +x start.command start.sh。
+
+【Linux】
+可能要先安裝 python3-venv。
+
+【共通】
+所有指令都必須在專案資料夾內執行（有 app.py 的那層），不要在家目錄下指令。
 
 裝好後請告訴我：要打開哪個網址、以及啟動用的終端機視窗能不能關掉。
 ```

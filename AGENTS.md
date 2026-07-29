@@ -44,6 +44,18 @@ cd /path/to/gemini-live-caption
 py -3.12 scripts\launcher.py
 ```
 
+**macOS 額外注意**：如果使用者是自己雙擊 `start.command`，第一次一定會被 Gatekeeper 擋下（「無法打開，因為它來自未識別的開發者」）。要請他改用**右鍵 →「打開」**才會出現「仍要打開」的選項。你直接在終端機跑 `./start.sh` 則不受影響，但可能需要先給執行權限：
+
+```bash
+chmod +x start.command start.sh
+```
+
+**Linux 額外注意**：Debian / Ubuntu 系可能缺 venv 模組，會在建立虛擬環境時失敗：
+
+```bash
+sudo apt install python3-venv
+```
+
 第一次會自動建立 `.venv` 並安裝套件，約 1-2 分鐘。
 
 ### 怎麼確認成功
@@ -71,6 +83,8 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5090/api/health
 | `ERR_CONNECTION_REFUSED` | 程式沒在跑（多半是啟動視窗被關掉） | 重新啟動，並提醒使用者視窗要留著 |
 | 終端機出現亂碼或 `UnicodeEncodeError` | Windows 主控台編碼。已於 2026-07-29 修正 | 重新下載最新版 |
 | 找不到 `app.py` / `.venv` | 在錯誤的資料夾下指令 | `cd` 到專案資料夾再執行 |
+| macOS：「無法打開，因為它來自未識別的開發者」 | Gatekeeper 擋下從網路下載的執行檔 | 請使用者用**右鍵 →「打開」**；或在終端機 `chmod +x start.command start.sh` 後執行 |
+| Linux：建立虛擬環境失敗 | 缺 venv 模組 | `sudo apt install python3-venv` |
 
 ## 安裝後使用者還需要做的事
 
