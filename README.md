@@ -4,7 +4,6 @@
 
 這是一套**在你自己電腦上執行**的開源工具。你用自己的 Gemini API key，上傳簡報PDF就可以成功使用。
 
-> **Beta**：Gemini Live Translate 目前仍是 Preview 模型，API 格式、額度與可用性都可能變動。
 
 ![Live Caption Studio 簡報畫面](assets/screenshots/stage.png)
 
