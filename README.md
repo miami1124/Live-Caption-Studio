@@ -1,9 +1,9 @@
 # Live Caption Studio
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](#開始使用)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/downloads/)
-[![Tests](https://github.com/miami1124/gemini-live-caption/actions/workflows/test.yml/badge.svg)](https://github.com/miami1124/gemini-live-caption/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-5b9a7e?style=flat-square&labelColor=2e3632)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows_|_macOS_|_Linux-5b9a7e?style=flat-square&labelColor=2e3632)](#開始使用)
+[![Python](https://img.shields.io/badge/python-3.10+-5b9a7e?style=flat-square&labelColor=2e3632)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/miami1124/gemini-live-caption/test.yml?style=flat-square&label=tests&labelColor=2e3632&color=5b9a7e)](https://github.com/miami1124/gemini-live-caption/actions/workflows/test.yml)
 
 用中文報告，台下即時看到英文、日文或韓文字幕——字幕直接疊在你的 PDF 簡報上。
 
