@@ -13,15 +13,26 @@
 
 *實際錄影：講者說中文，翻譯字幕即時出現在投影片下方。*
 
-> 💡 **打算把這個連結丟給 AI 幫你安裝嗎？** 可以，這個專案為此準備了說明檔：
+## 💡 讓 AI 幫你安裝（最省事）
+
+不想自己研究的話，**把下面這段整個複製給你的 AI**（ChatGPT、Claude、Gemini、Codex、Cursor 都可以）：
+
+```text
+請幫我安裝這個工具：https://github.com/miami1124/gemini-live-caption
+
+請先讀該 repo 的 AGENTS.md 再動作，裡面有完整安裝流程和各系統的已知地雷。
+
+特別注意這兩點，實測最常卡在這裡：
+1. Windows 要先確認 Python 不是 Microsoft Store 版（AGENTS.md 裡有檢查方法），
+   是的話要先改裝 python.org 官方版，否則虛擬環境一定建不起來
+2. 所有指令都必須在專案資料夾內執行，不要在家目錄下指令
+
+裝好後請告訴我：要打開哪個網址、以及啟動用的終端機視窗能不能關掉。
+```
+
+> 這個專案為此準備了 [AGENTS.md](AGENTS.md)（Codex、Cursor 等）與 [CLAUDE.md](CLAUDE.md)（Claude Code），裡面是精確到資料夾的指令、已知失敗模式對照表和驗證方式。
 >
-> | 你用的工具 | 跟它說 |
-> |---|---|
-> | Claude Code | 「讀這個 repo 的 `CLAUDE.md` 再幫我安裝」 |
-> | Codex / Cursor / 其他 | 「讀這個 repo 的 `AGENTS.md` 再幫我安裝」 |
-> | ChatGPT、Gemini 等對話介面 | 把 [AGENTS.md](AGENTS.md) 的內容貼給它 |
->
-> 裡面有精確到資料夾的指令、已知地雷和驗證方式，可以省下不少來回。
+> 已經自己下載好 ZIP 的話，直接在那個資料夾開啟 AI 工具，跟它說「讀 AGENTS.md 幫我安裝」就好。
 
 ## 適合什麼場合
 
