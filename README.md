@@ -6,6 +6,10 @@
 
 ![Live Caption Studio 簡報畫面](assets/screenshots/stage.png)
 
+> 💡 **打算把這個連結丟給 ChatGPT / Claude / Codex 幫你安裝嗎？**
+> 可以，這個專案附了 [AGENTS.md](AGENTS.md)，裡面有精確的安裝指令、已知地雷和驗證方式。
+> 跟你的 AI 說「請先讀這個 repo 的 AGENTS.md 再幫我安裝」，會順很多。
+
 ## 適合什麼場合
 
 上台報告時台下有聽不懂中文的人。在台上可以講中文，翻譯字幕就可以顯示在簡報上，跨越語言的問題，讓全場人都能聽懂你的簡報。
