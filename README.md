@@ -9,7 +9,9 @@
 
 這是一套**在你自己電腦上執行**的開源工具。你用自己的 Gemini API key，上傳簡報PDF就可以成功使用。
 
-![Live Caption Studio 簡報畫面](assets/screenshots/stage.png)
+![Live Caption Studio 實際運作：講中文，英文字幕即時浮現在簡報上](assets/demo.gif)
+
+*實際錄影：講者說中文，翻譯字幕即時出現在投影片下方。*
 
 > 💡 **打算把這個連結丟給 AI 幫你安裝嗎？** 可以，這個專案為此準備了說明檔：
 >
@@ -219,6 +221,8 @@ python scripts/gemini_smoke_test.py
 這個工具的起點是一場真實的需求：在中研院用中文做報告，台下有聽不懂中文的外國學者。實際上台用過之後，才慢慢補成現在這個樣子。
 
 - GitHub：[@miami1124](https://github.com/miami1124)
+- Threads：[@pusung.ai](https://www.threads.net/@pusung.ai)
+- Instagram：[@pusung.ai](https://www.instagram.com/pusung.ai/)
 
 歡迎回報使用狀況，特別是**卡住的地方**——那些是我自己一台電腦測不出來的。
 
