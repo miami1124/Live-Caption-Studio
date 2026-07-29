@@ -16,9 +16,21 @@
 
 ### 1. 安裝 Python
 
-需要 [Python 3.10 以上](https://www.python.org/downloads/)，到官網下載安裝就好，其他都不用設定。
+需要 [Python 3.10 以上](https://www.python.org/downloads/)。
 
-Windows 安裝時如果看到「Add Python to PATH」，勾起來比較保險，但**沒勾也能跑**。真的沒裝 Python 的話，啟動時會直接告訴你，不會發生一堆看不懂的錯誤。
+> ### ⚠️ Windows 使用者請注意
+>
+> **一定要從 [python.org](https://www.python.org/downloads/) 下載官方版**，安裝時勾選 **Add Python to PATH**。
+>
+> 不要用在命令列打 `python` 時跳出來的 **Microsoft Store 版**——那個版本缺少建立虛擬環境需要的元件，本工具會裝不起來（實測過，Store 版 Python 3.14 就會卡住）。
+>
+> 已經裝到 Store 版的話，改裝官方版後，把資料夾裡的 `.venv` 整個刪掉再重試。也可以用一行指令安裝：
+>
+> ```
+> winget install -e --id Python.Python.3.12
+> ```
+
+macOS 通常已內建可用的 Python；沒有的話一樣到官網下載即可。
 
 ### 2. 取得 Gemini API key
 
