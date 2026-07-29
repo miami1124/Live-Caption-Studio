@@ -4,7 +4,6 @@
 
 這是一套**在你自己電腦上執行**的開源工具。你用自己的 Gemini API key，上傳簡報PDF就可以成功使用。
 
-
 ![Live Caption Studio 簡報畫面](assets/screenshots/stage.png)
 
 ## 適合什麼場合
@@ -24,7 +23,6 @@ Windows 安裝時如果看到「Add Python to PATH」，勾起來比較保險，
 ### 2. 取得 Gemini API key
 
 到 [Google AI Studio](https://aistudio.google.com/app/apikey) 建立一組。免費額度就能用，用量與費用都算在你自己的 Google 專案上。
-
 
 ### 3. 啟動
 
@@ -46,15 +44,34 @@ Windows 安裝時如果看到「Add Python to PATH」，勾起來比較保險，
 
 （這個檔案叫 `.env`，就放在你剛下載的資料夾裡。程式只會讀這一個檔，不會去翻你電腦裡的其他東西。）
 
+先建立這個檔案：
+
 ```bash
-cp .env.example .env
+cp -n .env.example .env
 ```
 
-然後用文字編輯器打開 `.env`，填上你的 key：
+> ⚠️ **`-n` 這個參數不要省略。** 它的意思是「已經有 `.env` 就不要覆蓋」。
+> 如果你之前已經設定過，少了 `-n` 會直接把你原本的 key 洗掉——而且 `cp` 成功時不會有任何訊息，你不會發現。
+
+接著用文字編輯器打開它，填上你的 key：
+
+```bash
+# macOS
+open -e .env
+
+# Linux
+xdg-open .env
+
+# Windows
+notepad .env
+```
 
 ```dotenv
 GEMINI_API_KEY=你的_API_key
 ```
+
+> `.env` 開頭是一個點，在 macOS Finder 和 Windows 檔案總管裡預設是隱藏的，用上面的指令開最快。
+> （macOS Finder 想直接看到它，按 `Cmd` + `Shift` + `.` 可以切換顯示隱藏檔案。）
 
 這個檔案就存在你自己的電腦裡，不會傳到任何地方。只要注意兩件事：**不要把整個資料夾分享給別人**，也不要把 `.env` 上傳到 GitHub——本專案已經設定成自動忽略它，正常操作不會誤傳。
 
@@ -100,6 +117,27 @@ GEMINI_API_KEY=你的_API_key
 
 ## 遇到問題
 
+### 過一陣子回來，網頁變成「無法連上這個網站」
+
+**啟動時開的那個終端機視窗，就是程式本身。** 視窗關掉、終端機 App 關掉、或按了 `Ctrl+C`，程式就結束了——就像關掉 Word 視窗，Word 就關了一樣。
+
+所以用 `start.command` / `start.bat` / `start.sh` 啟動後，**那個視窗要留著**。縮到最小沒關係，關掉就是結束。
+
+如果你希望它在背景一直跑、關掉終端機也不受影響（macOS／Linux）：
+
+```bash
+cd 你放這個工具的資料夾
+nohup .venv/bin/python app.py > /tmp/live-caption.log 2>&1 &
+```
+
+之後要停掉：
+
+```bash
+kill $(lsof -ti :5090)
+```
+
+要看它有沒有出錯，訊息都在 `/tmp/live-caption.log`。
+
 ### 按了「開始翻譯」但完全沒字幕
 
 1. 回到設定頁按「**測試聲音**」，確認音量條會跳
@@ -114,7 +152,6 @@ GEMINI_API_KEY=你的_API_key
 ### 字幕擋到投影片內容
 
 用滑鼠抓著字幕拖走就好，它會記住新位置。
-
 
 ### 字幕跟不上／延遲很久
 
