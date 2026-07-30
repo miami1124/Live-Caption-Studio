@@ -105,6 +105,18 @@ class LiveCaptionAppTest(unittest.TestCase):
     def test_terms_endpoint_is_gone(self):
         self.assertEqual(self.client.get("/api/terms").status_code, 404)
 
+    def test_backend_calls_explain_a_closed_launcher_window(self):
+        """啟動用的終端機視窗被關掉時，畫面不能只丟一句英文的 "Failed to fetch"。
+
+        2026-07-30 在 Windows 實測：關掉視窗後上傳 PDF 就是這個症狀，
+        使用者完全看不出原因。所有後端呼叫都要走 callBackend 把訊息換成中文。
+        """
+        with self.client.get("/static/js/app.js") as response:
+            script = response.get_data(as_text=True)
+        self.assertIn("程式已經停止執行了", script)
+        # 漏掉任何一個就會讓那句英文漏出來，所以直接禁止對後端用裸的 fetch
+        self.assertNotIn('fetch("/api', script)
+
     def test_rejects_cross_site_mutations_but_allows_local_origin(self):
         rejected = self.client.post(
             "/api/config/key",

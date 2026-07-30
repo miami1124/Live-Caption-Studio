@@ -160,18 +160,31 @@ function updateKeyStatus() {
   updateReadiness();
 }
 
+const SERVER_GONE_MESSAGE = "程式已經停止執行了。請確認啟動時的那個視窗還開著；如果已經關掉，重新啟動一次就可以。";
+
+async function callBackend(url, options) {
+  // fetch 只在「連都連不上」的時候 reject——伺服器只要有回應就算成功，4xx / 5xx 也一樣。
+  // 所以走進這個 catch 幾乎一定是啟動用的那個終端機視窗被關掉了（2026-07-30 在 Windows 實測確認）。
+  // 瀏覽器原生訊息是英文的 "Failed to fetch"，對使用者完全沒有意義，在這裡一次換掉。
+  try {
+    return await fetch(url, options);
+  } catch (_error) {
+    throw new Error(SERVER_GONE_MESSAGE);
+  }
+}
+
 async function loadConfig() {
   try {
-    const response = await fetch("/api/config");
+    const response = await callBackend("/api/config");
     const data = await response.json();
     state.hasApiKey = Boolean(data.hasApiKey);
     state.apiKeySource = data.apiKeySource || "missing";
     updateKeyStatus();
-  } catch (_error) {
+  } catch (error) {
     state.hasApiKey = false;
     state.apiKeySource = "missing";
     updateKeyStatus();
-    setSetupError("無法讀取本機程式狀態，請重新啟動。")
+    setSetupError(error.message || "無法讀取本機程式狀態，請重新啟動。")
   }
 }
 
@@ -205,7 +218,7 @@ async function uploadPdf(file) {
   form.append("pdf", file);
 
   try {
-    const response = await fetch("/api/deck", { method: "POST", body: form });
+    const response = await callBackend("/api/deck", { method: "POST", body: form });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "PDF 讀取失敗。")
     state.deck = data;
@@ -899,7 +912,7 @@ elements.keyForm.addEventListener("submit", async (event) => {
   const apiKey = elements.apiKeyInput.value.trim();
   if (!apiKey) return;
   try {
-    const response = await fetch("/api/config/key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey }) });
+    const response = await callBackend("/api/config/key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ apiKey }) });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message);
     elements.apiKeyInput.value = "";
