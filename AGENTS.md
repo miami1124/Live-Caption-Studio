@@ -46,7 +46,7 @@ py -3.12 --version
 
 ```bash
 # macOS / Linux
-cd /path/to/gemini-live-caption
+cd /path/to/Live-Caption-Studio
 ./start.sh
 
 # Windows（在專案資料夾按住 Shift + 右鍵 →「在終端機中開啟」）

@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-5b9a7e?style=flat-square&labelColor=2e3632)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows_|_macOS_|_Linux-5b9a7e?style=flat-square&labelColor=2e3632)](#開始使用)
 [![Python](https://img.shields.io/badge/python-3.10+-5b9a7e?style=flat-square&labelColor=2e3632)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/github/actions/workflow/status/miami1124/gemini-live-caption/test.yml?style=flat-square&label=tests&labelColor=2e3632&color=5b9a7e)](https://github.com/miami1124/gemini-live-caption/actions/workflows/test.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/miami1124/Live-Caption-Studio/test.yml?style=flat-square&label=tests&labelColor=2e3632&color=5b9a7e)](https://github.com/miami1124/Live-Caption-Studio/actions/workflows/test.yml)
 
 用中文報告，台下即時看到英文、日文或韓文字幕——字幕直接疊在你的 PDF 簡報上。
 
@@ -18,7 +18,7 @@
 **可以把下面這段整個複製給你的 AI 幫忙安裝**（Claude code、Codex）：
 
 ```text
-請幫我安裝這個工具：https://github.com/miami1124/gemini-live-caption
+請幫我安裝這個工具：https://github.com/miami1124/Live-Caption-Studio
 
 請先讀該 repo 的 AGENTS.md 再動作（如果你是 Claude Code，讀 CLAUDE.md），
 裡面有完整安裝流程和各系統的已知地雷。
@@ -94,7 +94,7 @@ start.command 第一次一定會被 Gatekeeper 擋（Apple 無法驗證）。
 
 ```text
 請幫我檢查這個開源專案有沒有安全疑慮：
-https://github.com/miami1124/gemini-live-caption
+https://github.com/miami1124/Live-Caption-Studio
 
 我想知道：
 1. 它會不會偷偷把我的資料傳到哪裡
@@ -175,7 +175,7 @@ key 只留在程式的記憶體裡，**關掉程式就自動清除，不會寫�
 
 ### macOS：跳出「Apple 無法驗證是否為惡意軟體」
 
-正常現象，因為這是免費開源工具，沒有付費申請 Apple 的開發者簽章。放行一次就好：
+意思是系統無法驗證開發者身分，不代表程式有害、也不代表一定安全（詳見上方[安全警告那節](#️-系統會跳出安全警告這是正常的但你應該知道為什麼)）。確認過來源後，放行一次就好：
 
 1. 先按「**完成**」關掉那個視窗
 2. 打開「**系統設定**」→「**隱私權與安全性**」
@@ -187,7 +187,7 @@ key 只留在程式的記憶體裡，**關掉程式就自動清除，不會寫�
 嫌麻煩的話，終端機一行也可以：
 
 ```bash
-cd ~/Downloads/gemini-live-caption-main    # 換成你放的位置
+cd ~/Downloads/Live-Caption-Studio-main    # 換成你放的位置
 xattr -d com.apple.quarantine start.command start.sh
 ```
 

@@ -17,13 +17,13 @@ sudo apt install python3-venv
 ## 安裝步驟
 
 ```bash
-git clone https://github.com/miami1124/gemini-live-caption.git
-cd gemini-live-caption
+git clone https://github.com/miami1124/Live-Caption-Studio.git
+cd Live-Caption-Studio
 chmod +x start.sh
 ./start.sh
 ```
 
-或到 [Repository 首頁](https://github.com/miami1124/gemini-live-caption) 按 **Code → Download ZIP** 解壓縮後同樣執行 `./start.sh`。
+或到 [Repository 首頁](https://github.com/miami1124/Live-Caption-Studio) 按 **Code → Download ZIP** 解壓縮後同樣執行 `./start.sh`。
 
 第一次會自動建立 `.venv` 並安裝套件，約 1-2 分鐘。完成後瀏覽器會開啟 `http://127.0.0.1:5090`。
 

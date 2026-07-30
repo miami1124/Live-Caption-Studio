@@ -32,8 +32,8 @@ py -3.12 --version
 
 ## 安裝步驟
 
-1. 到 [Repository 首頁](https://github.com/miami1124/gemini-live-caption) 按 **Code → Download ZIP**
-2. 解壓縮，會得到 `gemini-live-caption-main` 資料夾
+1. 到 [Repository 首頁](https://github.com/miami1124/Live-Caption-Studio) 按 **Code → Download ZIP**
+2. 解壓縮，會得到 `Live-Caption-Studio-main` 資料夾
 3. 打開資料夾，**雙擊 `start.bat`**
 
 ### 如果 Windows 跳出安全性警告
@@ -48,7 +48,7 @@ py -3.12 --version
 
 ```text
 請幫我檢查這個開源專案有沒有安全疑慮：
-https://github.com/miami1124/gemini-live-caption
+https://github.com/miami1124/Live-Caption-Studio
 我想知道它會不會偷傳我的資料、會不會動到系統設定或刪我的檔案。
 ```
 

@@ -12,8 +12,8 @@ python3 --version
 
 ## 安裝步驟
 
-1. 到 [Repository 首頁](https://github.com/miami1124/gemini-live-caption) 按 **Code → Download ZIP**
-2. 解壓縮，會得到 `gemini-live-caption-main` 資料夾
+1. 到 [Repository 首頁](https://github.com/miami1124/Live-Caption-Studio) 按 **Code → Download ZIP**
+2. 解壓縮，會得到 `Live-Caption-Studio-main` 資料夾
 3. 雙擊 `start.command`
 
 **第一次一定會被擋下來**，跳出「Apple 無法驗證是否為惡意軟體」。
@@ -30,7 +30,7 @@ python3 --version
 >
 > ```
 > 請幫我檢查這個開源專案有沒有安全疑慮：
-> https://github.com/miami1124/gemini-live-caption
+> https://github.com/miami1124/Live-Caption-Studio
 > 我想知道它會不會偷傳我的資料、會不會動到系統設定或刪我的檔案。
 > ```
 
@@ -41,7 +41,7 @@ python3 --version
 從終端機執行不會觸發 Gatekeeper（那是 Finder 雙擊才啟動的機制），所以完全不用放行：
 
 ```bash
-cd ~/Downloads/gemini-live-caption-main    # 換成你放的位置
+cd ~/Downloads/Live-Caption-Studio-main    # 換成你放的位置
 ./start.sh
 ```
 
@@ -62,7 +62,7 @@ cd ~/Downloads/gemini-live-caption-main    # 換成你放的位置
 ### 方式三：終端機一行拿掉隔離標記
 
 ```bash
-cd ~/Downloads/gemini-live-caption-main    # 換成你放的位置
+cd ~/Downloads/Live-Caption-Studio-main    # 換成你放的位置
 xattr -d com.apple.quarantine start.command start.sh
 ```
 
