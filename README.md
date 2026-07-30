@@ -15,7 +15,7 @@
 
 ## 💡 讓 AI 幫你安裝（最省事）
 
-不想自己研究的話，**把下面這段整個複製給你的 AI**（ChatGPT、Claude、Gemini、Codex、Cursor 都可以）：
+**可以把下面這段整個複製給你的 AI幫忙安裝**（ChatGPT、Claude、Gemini、Codex、Cursor 都可以）：
 
 ```text
 請幫我安裝這個工具：https://github.com/miami1124/gemini-live-caption
