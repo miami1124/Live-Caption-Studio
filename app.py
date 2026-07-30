@@ -17,6 +17,7 @@ import ssl
 import sys
 import tempfile
 import threading
+import time
 import uuid
 from pathlib import Path
 from urllib.parse import urlencode
@@ -71,6 +72,27 @@ def _cleanup_temp() -> None:
 
 
 atexit.register(_cleanup_temp)
+
+
+def _sweep_stale_temp_dirs(max_age_hours: int = 24) -> None:
+    """把上次沒清乾淨的暫存投影片掃掉。
+
+    `atexit` 只在正常結束時執行——當機、斷電、被強制關掉都不會跑，
+    使用者的投影片就會一直留在暫存資料夾裡。這是隱私問題，
+    所以每次啟動順手清掉超過一天的舊目錄（絕不碰這次自己建的那個）。
+    """
+    cutoff = time.time() - max_age_hours * 3600
+    for path in Path(tempfile.gettempdir()).glob("gemini-live-caption-*"):
+        if path == _temp_root or not path.is_dir():
+            continue
+        try:
+            if path.stat().st_mtime < cutoff:
+                shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass   # 別人的目錄或權限不足就跳過，清不掉不該讓程式起不來
+
+
+_sweep_stale_temp_dirs()
 
 
 def _get_api_key() -> tuple[str, str]:
