@@ -13,9 +13,24 @@
 
 *實際錄影：講者說中文，翻譯字幕即時出現在投影片下方。*
 
-## 💡 讓 AI 幫你安裝（最省事）
+## 三步驟開始
 
-**可以把下面這段整個複製給你的 AI 幫忙安裝**（Claude code、Codex）：
+1. 按這個頁面上方的 **Code → Download ZIP**，下載後解壓縮
+2. 打開資料夾，雙擊 **`start.bat`**（Windows）或 **`start.command`**（macOS）
+3. 等 1-2 分鐘裝好，瀏覽器會自己開啟
+
+需要電腦有 **Python 3.10 以上**（Mac 通常本來就有，Windows 請看下面的注意事項）。
+
+有兩件事先講，遇到才不會嚇到：
+
+- **第一次啟動會被系統的安全機制擋下來**，這是正常的。[往下看原因和處理方式](#開始使用)
+- **啟動的那個視窗要留著**，它就是程式本身，關掉程式就結束了。縮到最小沒關係。
+
+各系統的完整說明和已知地雷：[Windows](install/windows.md) · [macOS](install/macos.md) · [Linux](install/linux.md)
+
+## 💡 卡住的話，讓 AI 幫你排查
+
+**可以把下面這段整個複製給你的 AI**（Claude Code、Codex）：
 
 ```text
 請幫我安裝這個工具：https://github.com/miami1124/Live-Caption-Studio
@@ -55,6 +70,8 @@ start.command 第一次一定會被 Gatekeeper 擋（Apple 無法驗證）。
 > 這個專案為此準備了 [AGENTS.md](AGENTS.md)（Codex、Cursor 等）與 [CLAUDE.md](CLAUDE.md)（Claude Code），裡面是精確到資料夾的指令、已知失敗模式對照表和驗證方式。
 >
 > 已經自己下載好 ZIP 的話，直接在那個資料夾開啟 AI 工具，跟它說「讀 AGENTS.md 幫我安裝」就好。
+
+**先講一個預期**：有些 AI 的執行環境有權限限制，可能會幫你查到一半、然後請你自己雙擊啟動檔完成——**那是正常的，不是壞掉**。實測上 AI 很擅長診斷問題（幫你確認 Python 版本、找出卡在哪），但最後一哩路自己雙擊往往還比較快。
 
 ## 適合什麼場合
 
@@ -193,7 +210,9 @@ xattr -d com.apple.quarantine start.command start.sh
 
 詳細說明見 [install/macos.md](install/macos.md)。
 
-### 過一陣子回來，網頁變成「無法連上這個網站」
+### 網頁變成「無法連上這個網站」，或畫面出現「程式已經停止執行了」
+
+兩種都是同一件事：**程式已經不在了。** 網頁如果還開著，按鈕會沒反應、上傳 PDF 會失敗；重新整理就會變成無法連線。
 
 **啟動時開的那個終端機視窗，就是程式本身。** 視窗關掉、終端機 App 關掉、或按了 `Ctrl+C`，程式就結束了——就像關掉 Word 視窗，Word 就關了一樣。
 
@@ -294,6 +313,23 @@ kill $(lsof -ti :5090)
 
 ---
 
+## 回報問題
+
+這個工具目前還在小範圍測試，**最有價值的回報是「你卡在哪裡」**——那些是我自己一台電腦永遠測不出來的。
+
+請開一個 [Issue](../../issues)，告訴我這四件事就好：
+
+1. 你用 **Windows 還是 macOS**（版本號更好）
+2. **卡在哪一個步驟**（下載、啟動、填 key、按開始翻譯…）
+3. 最後**有沒有成功看到字幕**
+4. 有的話，**翻譯的速度和準確度**用起來如何
+
+畫面上如果有紅色錯誤訊息，連那句一起貼給我。啟動的那個終端機視窗裡的最後幾行也很有幫助。
+
+> 安全性相關的問題請不要開公開 Issue，改看 [SECURITY.md](SECURITY.md)。
+
+---
+
 ## 開發
 
 ```bash
@@ -329,8 +365,6 @@ python scripts/gemini_smoke_test.py
 ```
 
 > 改 `templates/` 底下的檔案後**要重開 server**才會生效（Flask 在非 debug 模式會快取模板）。改 CSS / JS 只要重整瀏覽器。
-
-回報問題請開 [Issue](../../issues)。安全性問題請看 [SECURITY.md](SECURITY.md)。
 
 ---
 
