@@ -102,6 +102,27 @@ class LiveCaptionAppTest(unittest.TestCase):
         self.assertNotIn("termsToggle", html)
         self.assertNotIn("專有名詞", html)
 
+    def test_contextual_guides_explain_setup_stage_and_security(self):
+        html = self.client.get("/").get_data(as_text=True)
+        self.assertIn('id="coachOverlay"', html)
+        self.assertIn('id="setupGuideOpenBtn"', html)
+        self.assertIn('id="stageGuideOpenBtn"', html)
+        self.assertIn('id="stageCoachCaption"', html)
+        self.assertIn("麥克風音訊會傳到 Google", html)
+        self.assertIn("不會傳到作者管理的伺服器", html)
+        self.assertIn("key 仍會傳給 Google Gemini 驗證", html)
+        self.assertIn("PDF 則留在本機", html)
+        self.assertNotIn('id="onboardingView"', html)
+        self.assertNotIn("data-onboarding-step=", html)
+
+        with self.client.get("/static/js/app.js") as response:
+            script = response.get_data(as_text=True)
+        self.assertIn("liveCaptionSetupGuideVersion", script)
+        self.assertIn("liveCaptionStageGuideVersion", script)
+        self.assertIn('openCoach("setup")', script)
+        self.assertIn('openCoach("stage")', script)
+        self.assertNotIn("從 .env 安全讀取", script)
+
     def test_terms_endpoint_is_gone(self):
         self.assertEqual(self.client.get("/api/terms").status_code, 404)
 

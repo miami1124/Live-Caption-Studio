@@ -162,6 +162,46 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .target-caption.swap { animation: caption-in .2s ease both; }
 @keyframes caption-in { from { opacity: .25; transform: translateY(5px); } }
 
+/* 導覽裡暫時出現的示範字幕與快捷鍵，結束後完全不留在投影畫面。 */
+.stage-coach-caption {
+  position: absolute;
+  z-index: 44;
+  left: 50%;
+  bottom: clamp(6.6rem, 13vh, 9rem);
+  max-width: 86vw;
+  padding: .42em .72em .48em;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 14px;
+  color: #fff;
+  background: rgba(8,11,9,.78);
+  box-shadow: 0 10px 34px rgba(0,0,0,.32);
+  font-size: clamp(1.2rem, 3vw, 2.7rem);
+  font-weight: 650;
+  letter-spacing: -.025em;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.stage-coach-keys {
+  position: absolute;
+  z-index: 44;
+  top: 1.2rem;
+  right: 1.2rem;
+  padding: .7rem .9rem;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 10px;
+  color: var(--muted-strong);
+  background: rgba(10,14,12,.88);
+  box-shadow: 0 12px 34px rgba(0,0,0,.3);
+  font-size: .76rem;
+  backdrop-filter: blur(12px);
+}
+
+.stage-coach-keys kbd {
+  margin-right: .15rem;
+  color: var(--text);
+}
+
 /* ── 設定抽屜：上台中不常碰的東西才放這裡 ── */
 .settings-drawer { position: absolute; z-index: 31; top: .75rem; right: .75rem; bottom: .75rem; width: min(370px, calc(100vw - 1.5rem)); display: flex; flex-direction: column; border: 1px solid var(--line-strong); border-radius: 20px; background: rgba(18,25,21,.97); box-shadow: var(--shadow); backdrop-filter: blur(22px); transform: translateX(calc(100% + 1.5rem)); transition: transform .28s cubic-bezier(.2,.8,.2,1); }
 .settings-drawer.open { transform: translateX(0); }
@@ -186,6 +226,203 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .drawer-action.danger { color: var(--muted); }
 .drawer-action.danger:hover { color: var(--danger); border-color: rgba(240,139,131,.4); }
 .drawer-action.danger.confirming { color: var(--danger); border-color: rgba(240,139,131,.55); background: rgba(240,139,131,.1); }
+
+/* ── 情境式新手導覽 ── */
+.coach-overlay {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  overflow: hidden;
+}
+
+.coach-spotlight {
+  position: fixed;
+  z-index: 81;
+  border: 2px solid #78d6ae;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(5, 10, 7, .68), 0 0 0 5px rgba(120, 214, 174, .18);
+  pointer-events: none;
+  transition: opacity .14s ease;
+}
+
+.coach-popover {
+  --coach-arrow-x: 32px;
+  --coach-arrow-y: 32px;
+  position: fixed;
+  z-index: 82;
+  width: min(330px, calc(100vw - 20px));
+  padding: 1.1rem 1.15rem 1rem;
+  border: 1px solid rgba(59, 84, 71, .18);
+  border-radius: 13px;
+  color: #1a211d;
+  background: #fff;
+  box-shadow: 0 20px 55px rgba(3, 13, 8, .3), inset 0 1px 0 rgba(255,255,255,.8);
+  transition: opacity .14s ease;
+}
+
+.coach-overlay.coach-positioning .coach-spotlight,
+.coach-overlay.coach-positioning .coach-popover {
+  opacity: 0;
+  transition: none;
+}
+
+.coach-arrow {
+  position: absolute;
+  z-index: -1;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(59, 84, 71, .18);
+  background: #fff;
+  transform: rotate(45deg);
+}
+
+.coach-popover[data-placement="bottom"] .coach-arrow {
+  top: -8px;
+  left: var(--coach-arrow-x);
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.coach-popover[data-placement="top"] .coach-arrow {
+  bottom: -8px;
+  left: var(--coach-arrow-x);
+  border-top: 0;
+  border-left: 0;
+}
+
+.coach-popover[data-placement="right"] .coach-arrow {
+  top: var(--coach-arrow-y);
+  left: -8px;
+  border-top: 0;
+  border-right: 0;
+}
+
+.coach-popover[data-placement="left"] .coach-arrow {
+  top: var(--coach-arrow-y);
+  right: -8px;
+  border-bottom: 0;
+  border-left: 0;
+}
+
+.coach-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: .65rem;
+  color: #5b9a7e;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.coach-meta b {
+  color: #89938d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.coach-popover h2 {
+  margin: 0;
+  color: #171c19;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+
+.coach-popover p {
+  margin: .55rem 0 0;
+  color: #626e67;
+  font-size: .78rem;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.coach-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  margin-top: 1rem;
+}
+
+.coach-actions > div {
+  display: flex;
+  gap: .45rem;
+}
+
+.coach-skip,
+.coach-back,
+.coach-next {
+  min-height: 36px;
+  padding: 0 .75rem;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: .73rem;
+  font-weight: 650;
+  transition: background .16s ease, color .16s ease, transform .12s ease;
+}
+
+.coach-skip,
+.coach-back {
+  color: #69756e;
+  background: transparent;
+}
+
+.coach-skip:hover,
+.coach-back:hover:not(:disabled) {
+  color: #202824;
+  background: #f0f3f1;
+}
+
+.coach-back:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.coach-next {
+  min-width: 76px;
+  color: #fff;
+  background: #1d2822;
+}
+
+.coach-next:hover {
+  background: #304239;
+}
+
+.coach-skip:active,
+.coach-back:active:not(:disabled),
+.coach-next:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 620px) {
+  .coach-popover {
+    width: min(318px, calc(100vw - 20px));
+    padding: 1rem;
+  }
+
+  .stage-coach-caption {
+    font-size: clamp(1rem, 5.4vw, 1.5rem);
+  }
+
+  .stage-coach-keys {
+    top: .8rem;
+    right: .8rem;
+    font-size: .68rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-spotlight,
+  .coach-popover {
+    transition: none;
+  }
+}
 .shortcut-list { margin-top: auto; padding: 1.1rem 1.4rem; border-top: 1px solid var(--line); color: var(--muted); }
 .shortcut-list > span { color: var(--muted-strong); font-size: .68rem; font-weight: 650; }
 .shortcut-list p { margin: .55rem 0 0; font-size: .63rem; line-height: 1.7; }

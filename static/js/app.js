@@ -1,6 +1,9 @@
 const elements = Object.fromEntries(
   [
     "setupView", "stageView", "readyCount",
+    "setupGuideOpenBtn", "stageGuideOpenBtn", "keySafety",
+    "coachOverlay", "coachSpotlight", "coachPopover", "coachLabel", "coachStepCount", "coachStepTotal",
+    "coachTitle", "coachBody", "coachSkipBtn", "coachBackBtn", "coachNextBtn",
     "pdfItem", "pdfRow", "pdfSummary", "pdfAct", "pdfBody", "dropZone", "pdfInput", "pdfMeta",
     "langItem", "langSummary",
     "soundItem", "soundSummary",
@@ -9,7 +12,7 @@ const elements = Object.fromEntries(
     "enterStageBtn", "setupError",
     "slideImage", "slideLoader", "stageSurface", "stageAlert", "stageAlertText", "stageControls",
     "translateBtn", "smallerBtn", "largerBtn", "captionSizeText", "settingsBtn",
-    "fullscreenPrompt", "captionLayer", "sourceCaption", "targetCaption",
+    "fullscreenPrompt", "captionLayer", "sourceCaption", "targetCaption", "stageCoachCaption", "stageCoachKeys",
     "settingsDrawer", "closeSettingsBtn", "drawerBackdrop", "stageLanguageSelect", "stageMicSelect",
     "zhToggleBtn", "captionWindowBtn", "fullscreenBtn", "resetCaptionPosBtn",
     "replacePdfBtn", "leaveStageBtn", "toastStack",
@@ -17,6 +20,11 @@ const elements = Object.fromEntries(
 );
 
 const state = {
+  coachMode: null,
+  coachIndex: 0,
+  coachSteps: [],
+  coachTarget: null,
+  coachRenderToken: 0,
   deck: null,
   language: localStorage.getItem("liveCaptionLanguage") || "en",
   hasApiKey: false,
@@ -73,6 +81,220 @@ function displayWidth(text) {
 // 縮字的下限。到底了還是塞不下就讓它裁掉，總比字小到台下看不到好。
 const CAP_FIT_MIN = .55;
 const CONTROLS_IDLE_MS = 2600;
+const SETUP_GUIDE_VERSION = "1";
+const STAGE_GUIDE_VERSION = "1";
+const SETUP_GUIDE_KEY = "liveCaptionSetupGuideVersion";
+const STAGE_GUIDE_KEY = "liveCaptionStageGuideVersion";
+
+function openCheckItem(item) {
+  document.querySelectorAll(".check-item").forEach((node) => {
+    const open = node === item;
+    node.classList.toggle("open", open);
+    node.querySelector(".check-row").setAttribute("aria-expanded", String(open));
+  });
+}
+
+function setupGuideSteps() {
+  return [
+    {
+      target: () => elements.pdfItem,
+      label: "開始前設定",
+      title: "先放入你的 PDF 簡報",
+      body: "PowerPoint、Keynote 或 Google Slides 請先匯出成 PDF。檔案只會在這台電腦處理。",
+      prepare: () => openCheckItem(elements.pdfItem),
+    },
+    {
+      target: () => elements.langItem,
+      label: "字幕語言",
+      title: "選擇台下要看到的語言",
+      body: "你仍然用中文報告，這裡選的是即時字幕要顯示英文、日文或韓文。",
+      prepare: () => openCheckItem(elements.langItem),
+    },
+    {
+      target: () => elements.keySafety,
+      label: "API key 與資料",
+      title: "這不是作者架設的網站",
+      body: "頁面執行在你自己的電腦。key 暫存在本機記憶體，只會送到 Google Gemini 驗證；關閉程式後清除。",
+      prepare: () => openCheckItem(elements.soundItem),
+    },
+    {
+      target: () => elements.micTestBtn,
+      label: "上台前最後一步",
+      title: "一定要先測試聲音",
+      body: "按下後說一句話。右邊音量條會動，才代表瀏覽器真的收得到你的麥克風。",
+      prepare: () => openCheckItem(elements.soundItem),
+    },
+  ];
+}
+
+function stageGuideSteps() {
+  return [
+    {
+      target: () => elements.translateBtn,
+      label: "報告畫面",
+      title: "從這裡開始即時翻譯",
+      body: "按這顆按鈕或鍵盤 M 開始／停止翻譯。導覽結束後，控制列會自動收起。",
+      prepare: () => wakeControls(),
+    },
+    {
+      target: () => elements.settingsBtn,
+      label: "報告中設定",
+      title: "臨時調整都在這裡",
+      body: "可以更換字幕語言、麥克風、顯示中文對照，或開啟獨立字幕浮窗。按 S 也能快速開啟。",
+      prepare: () => wakeControls(),
+    },
+    {
+      target: () => elements.stageCoachCaption,
+      label: "字幕位置",
+      title: "字幕可以直接拖曳",
+      body: "用滑鼠抓住字幕移到不擋簡報的位置。放開後會記住，下次開啟仍會留在同一處。",
+      prepare: () => elements.stageCoachCaption.classList.remove("hidden"),
+    },
+    {
+      target: () => elements.stageCoachKeys,
+      label: "常用快捷鍵",
+      title: "不用一直找控制列",
+      body: "按 F 切換全螢幕，使用方向鍵或空白鍵翻頁。滑鼠移到畫面底部，控制列就會出現。",
+      prepare: () => elements.stageCoachKeys.classList.remove("hidden"),
+    },
+  ];
+}
+
+function clearCoachArtifacts() {
+  elements.stageCoachCaption.classList.add("hidden");
+  elements.stageCoachKeys.classList.add("hidden");
+}
+
+function positionCoach() {
+  if (!state.coachMode || !state.coachTarget || elements.coachOverlay.classList.contains("hidden")) return;
+  const target = state.coachTarget;
+  const rect = target.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+
+  const edge = 10;
+  const pad = state.coachMode === "stage" ? 8 : 6;
+  const spotLeft = Math.max(edge, rect.left - pad);
+  const spotTop = Math.max(edge, rect.top - pad);
+  const spotRight = Math.min(window.innerWidth - edge, rect.right + pad);
+  const spotBottom = Math.min(window.innerHeight - edge, rect.bottom + pad);
+  Object.assign(elements.coachSpotlight.style, {
+    left: `${spotLeft}px`,
+    top: `${spotTop}px`,
+    width: `${Math.max(1, spotRight - spotLeft)}px`,
+    height: `${Math.max(1, spotBottom - spotTop)}px`,
+  });
+
+  const popover = elements.coachPopover;
+  popover.style.left = "0px";
+  popover.style.top = "0px";
+  popover.style.visibility = "hidden";
+  const pop = popover.getBoundingClientRect();
+  const gap = 16;
+  let placement = "bottom";
+  let left = rect.left + rect.width / 2 - pop.width / 2;
+  let top = rect.bottom + gap;
+
+  if (rect.bottom + gap + pop.height > window.innerHeight - edge) {
+    placement = "top";
+    top = rect.top - gap - pop.height;
+  }
+  if (top < edge) {
+    placement = rect.right + gap + pop.width <= window.innerWidth - edge ? "right" : "left";
+    top = rect.top + rect.height / 2 - pop.height / 2;
+    left = placement === "right" ? rect.right + gap : rect.left - gap - pop.width;
+  }
+
+  left = Math.max(edge, Math.min(window.innerWidth - pop.width - edge, left));
+  top = Math.max(edge, Math.min(window.innerHeight - pop.height - edge, top));
+  const arrowX = Math.max(20, Math.min(pop.width - 20, rect.left + rect.width / 2 - left));
+  const arrowY = Math.max(20, Math.min(pop.height - 20, rect.top + rect.height / 2 - top));
+  popover.dataset.placement = placement;
+  popover.style.setProperty("--coach-arrow-x", `${arrowX}px`);
+  popover.style.setProperty("--coach-arrow-y", `${arrowY}px`);
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+  popover.style.visibility = "visible";
+}
+
+async function renderCoachStep(index) {
+  if (!state.coachMode) return;
+  const renderToken = ++state.coachRenderToken;
+  elements.coachOverlay.classList.add("coach-positioning");
+  state.coachIndex = Math.max(0, Math.min(state.coachSteps.length - 1, index));
+  clearCoachArtifacts();
+  const step = state.coachSteps[state.coachIndex];
+  step.prepare?.();
+  const target = step.target();
+  if (!target) return;
+  state.coachTarget = target;
+
+  elements.coachLabel.textContent = step.label;
+  elements.coachTitle.textContent = step.title;
+  elements.coachBody.textContent = step.body;
+  elements.coachStepCount.textContent = String(state.coachIndex + 1);
+  elements.coachStepTotal.textContent = String(state.coachSteps.length);
+  elements.coachBackBtn.disabled = state.coachIndex === 0;
+  elements.coachNextBtn.textContent = state.coachIndex === state.coachSteps.length - 1 ? "知道了" : "下一步";
+
+  if (state.coachMode === "setup") target.scrollIntoView({ behavior: "auto", block: "center" });
+  await new Promise(requestAnimationFrame);
+  await new Promise(requestAnimationFrame);
+  if (renderToken !== state.coachRenderToken || !state.coachMode) return;
+  positionCoach();
+  await new Promise(requestAnimationFrame);
+  if (renderToken !== state.coachRenderToken || !state.coachMode) return;
+  elements.coachOverlay.classList.remove("coach-positioning");
+  elements.coachNextBtn.focus();
+}
+
+function openCoach(mode) {
+  if (state.coachMode) return;
+  state.coachMode = mode;
+  state.coachSteps = mode === "setup" ? setupGuideSteps() : stageGuideSteps();
+  state.coachIndex = 0;
+  (mode === "setup" ? elements.setupView : elements.stageView).append(elements.coachOverlay);
+  if (mode === "stage") {
+    closeSettings();
+    wakeControls();
+  }
+  elements.coachOverlay.classList.add("coach-positioning");
+  elements.coachOverlay.classList.remove("hidden");
+  renderCoachStep(0);
+}
+
+function closeCoach(markSeen = true) {
+  const mode = state.coachMode;
+  if (!mode) return;
+  if (markSeen) {
+    localStorage.setItem(mode === "setup" ? SETUP_GUIDE_KEY : STAGE_GUIDE_KEY, mode === "setup" ? SETUP_GUIDE_VERSION : STAGE_GUIDE_VERSION);
+  }
+  state.coachMode = null;
+  state.coachRenderToken += 1;
+  state.coachSteps = [];
+  state.coachTarget = null;
+  clearCoachArtifacts();
+  elements.coachOverlay.classList.remove("coach-positioning");
+  elements.coachOverlay.classList.add("hidden");
+  if (mode === "stage") {
+    wakeControls();
+    elements.settingsBtn.focus();
+  } else {
+    elements.setupGuideOpenBtn.focus();
+  }
+}
+
+function nextCoachStep() {
+  if (state.coachIndex >= state.coachSteps.length - 1) closeCoach();
+  else renderCoachStep(state.coachIndex + 1);
+}
+
+function maybeStartSetupGuide() {
+  if (localStorage.getItem(SETUP_GUIDE_KEY) !== SETUP_GUIDE_VERSION) setTimeout(() => openCoach("setup"), 450);
+}
+
+function maybeStartStageGuide() {
+  if (localStorage.getItem(STAGE_GUIDE_KEY) !== STAGE_GUIDE_VERSION) setTimeout(() => openCoach("stage"), 350);
+}
 
 function toast(message, type = "info") {
   const item = document.createElement("div");
@@ -125,7 +347,7 @@ function updateReadiness() {
 
   setLamp(elements.soundItem, state.hasApiKey);
   elements.soundSummary.textContent = state.hasApiKey
-    ? `${micLabel()} · Gemini API key ${state.apiKeySource === "environment" ? "已從 .env 讀取" : "已就緒"}`
+    ? `${micLabel()} · Gemini API key ${state.apiKeySource === "environment" ? "從 .env 讀取" : "已就緒"}`
     : `${micLabel()} · 還沒設定 Gemini API key`;
 
   // 語言永遠算就緒，它有預設值
@@ -148,7 +370,7 @@ function updateKeyStatus() {
   elements.keyOrb.className = `status-orb ${state.hasApiKey ? "ready" : "error"}`;
   if (state.hasApiKey) {
     elements.keyStatusTitle.textContent = "Gemini API key 已就緒";
-    elements.keyStatusText.textContent = state.apiKeySource === "environment" ? "從 .env 安全讀取" : "只在本次執行期間使用";
+    elements.keyStatusText.textContent = state.apiKeySource === "environment" ? "從 .env 讀取" : "只在本次執行期間使用";
     elements.editKeyBtn.textContent = "更換";
     elements.keyForm.classList.add("hidden");
   } else {
@@ -433,7 +655,8 @@ function stopSilenceWatch() {
    滑鼠或鍵盤一動就浮出來，停幾秒自己收掉——跟影片播放器一樣。 */
 
 function checkControlsIdle() {
-  const busy = elements.settingsDrawer.classList.contains("open")
+  const busy = state.coachMode === "stage"
+    || elements.settingsDrawer.classList.contains("open")
     || elements.stageControls.matches(":hover")
     || elements.stageControls.contains(document.activeElement);
   if (busy) state.lastActivity = Date.now();
@@ -749,9 +972,11 @@ async function enterStage() {
   } catch (_error) {
     syncFullscreenUi();
   }
+  maybeStartStageGuide();
 }
 
 function leaveStage() {
+  if (state.coachMode === "stage") closeCoach(false);
   stopTranslation();
   closeSettings();
   sleepControlsNow();
@@ -898,6 +1123,12 @@ function syncFullscreenUi() {
 
 /* ── 事件接線 ────────────────────────────────────────────────── */
 
+elements.setupGuideOpenBtn.addEventListener("click", () => openCoach("setup"));
+elements.stageGuideOpenBtn.addEventListener("click", () => openCoach("stage"));
+elements.coachSkipBtn.addEventListener("click", () => closeCoach());
+elements.coachBackBtn.addEventListener("click", () => renderCoachStep(state.coachIndex - 1));
+elements.coachNextBtn.addEventListener("click", nextCoachStep);
+
 document.querySelectorAll(".check-row").forEach((row) => {
   row.addEventListener("click", () => toggleCheckItem(row.closest(".check-item")));
 });
@@ -975,8 +1206,17 @@ elements.resetCaptionPosBtn.addEventListener("click", resetCaptionPosition);
 document.addEventListener("fullscreenchange", () => {
   syncFullscreenUi();
   closeSettings();
+  setTimeout(positionCoach, 80);
 });
 document.addEventListener("keydown", (event) => {
+  if (state.coachMode) {
+    if (event.key === "Escape") closeCoach();
+    else if (event.key === "ArrowRight") nextCoachStep();
+    else if (event.key === "ArrowLeft") renderCoachStep(state.coachIndex - 1);
+    else return;
+    event.preventDefault();
+    return;
+  }
   if (elements.stageView.classList.contains("hidden")) return;
   // 這裡本來有 `if (event.isComposing) return;`，想擋的是注音組字中誤觸快捷鍵，
   // 實際效果是注音一開著就整組快捷鍵失效（+/- 調不動字級就是這樣來的）。
@@ -1029,7 +1269,9 @@ window.addEventListener("beforeunload", () => {
 window.addEventListener("resize", () => {
   updateCaptionViews();
   clampCaptionPosition();
+  positionCoach();
 });
+window.addEventListener("scroll", positionCoach, { passive: true });
 navigator.mediaDevices?.addEventListener?.("devicechange", () => loadMicrophones(false));
 
 selectLanguage(state.language);
@@ -1037,3 +1279,4 @@ applyStagePreferences();
 loadConfig();
 loadMicrophones(false);
 updateReadiness();
+maybeStartSetupGuide();

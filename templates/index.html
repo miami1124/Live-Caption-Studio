@@ -22,6 +22,9 @@
             <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
             <span>Live Caption Studio</span>
           </a>
+          <button type="button" class="header-help" id="setupGuideOpenBtn">
+            <span aria-hidden="true">?</span>使用說明
+          </button>
         </div>
       </header>
 
@@ -88,6 +91,20 @@
                 <span class="check-act">測試聲音</span>
               </button>
               <div class="check-body" id="soundBody">
+                <aside class="key-safety" id="keySafety" aria-labelledby="keySafetyTitle">
+                  <div class="key-safety-head">
+                    <span class="key-safety-mark" aria-hidden="true">•••</span>
+                    <div><strong id="keySafetyTitle">為什麼可以放心貼上 API key？</strong><small>這是你電腦上的本機程式，不是作者架設的網站</small></div>
+                  </div>
+                  <p class="key-safety-lead">這個頁面執行在 <code>127.0.0.1</code>。key 只會先交給本機程式、暫存在記憶體，再由本機直接連線 Google Gemini。</p>
+                  <ul>
+                    <li>不會傳到作者管理的伺服器</li>
+                    <li>不會寫進檔案或瀏覽器儲存空間</li>
+                    <li>關閉程式後自動清除</li>
+                  </ul>
+                  <p class="key-safety-note"><strong>key 仍會傳給 Google Gemini 驗證；</strong>翻譯時麥克風音訊會傳到 Google。PDF 則留在本機。</p>
+                  <a href="https://github.com/miami1124/Live-Caption-Studio/blob/main/SECURITY.md" target="_blank" rel="noreferrer">查看原始碼與完整安全說明 ↗</a>
+                </aside>
                 <div class="key-row" id="keyRow">
                   <div class="key-status">
                     <span class="status-orb" id="keyOrb"></span>
@@ -148,6 +165,8 @@
         <div class="source-caption hidden" id="sourceCaption"></div>
         <div class="target-caption" id="targetCaption"></div>
       </div>
+      <div class="stage-coach-caption hidden" id="stageCoachCaption">Translated captions appear here.</div>
+      <div class="stage-coach-keys hidden" id="stageCoachKeys"><kbd>F</kbd> 全螢幕　<kbd>←</kbd><kbd>→</kbd> 翻頁</div>
 
       <div class="stage-controls" id="stageControls">
         <button type="button" class="control-translate" id="translateBtn">
@@ -185,6 +204,7 @@
           <button type="button" class="drawer-action" id="resetCaptionPosBtn">字幕位置歸位</button>
           <button type="button" class="drawer-action" id="captionWindowBtn">開啟字幕浮窗 <span>↗</span></button>
           <button type="button" class="drawer-action" id="fullscreenBtn"><span>切換全螢幕</span><kbd>F</kbd></button>
+          <button type="button" class="drawer-action" id="stageGuideOpenBtn">重播操作導覽 <span>?</span></button>
 
           <div class="drawer-danger">
             <button type="button" class="drawer-action danger" id="replacePdfBtn" data-label="更換 PDF 簡報" data-confirm="再按一次：離開並換檔案">更換 PDF 簡報</button>
@@ -201,6 +221,23 @@
       <button class="drawer-backdrop hidden" id="drawerBackdrop" aria-label="關閉設定"></button>
     </section>
   </main>
+
+  <div class="coach-overlay hidden" id="coachOverlay" role="dialog" aria-modal="true" aria-labelledby="coachTitle" aria-describedby="coachBody">
+    <div class="coach-spotlight" id="coachSpotlight" aria-hidden="true"></div>
+    <section class="coach-popover" id="coachPopover" data-placement="bottom">
+      <span class="coach-arrow" aria-hidden="true"></span>
+      <div class="coach-meta"><span id="coachLabel">快速導覽</span><b><span id="coachStepCount">1</span> / <span id="coachStepTotal">4</span></b></div>
+      <h2 id="coachTitle">選擇你的 PDF 簡報</h2>
+      <p id="coachBody"></p>
+      <div class="coach-actions">
+        <button type="button" class="coach-skip" id="coachSkipBtn">略過</button>
+        <div>
+          <button type="button" class="coach-back" id="coachBackBtn">上一步</button>
+          <button type="button" class="coach-next" id="coachNextBtn">下一步</button>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <div class="toast-stack" id="toastStack" aria-live="assertive"></div>
   <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>

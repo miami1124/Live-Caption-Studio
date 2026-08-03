@@ -72,6 +72,42 @@ body::before {
   background: #fff;
 }
 
+.header-help {
+  display: inline-flex;
+  align-items: center;
+  gap: .48rem;
+  min-height: 38px;
+  padding: 0 .85rem;
+  border: 1px solid var(--setup-line);
+  border-radius: 8px;
+  color: var(--setup-dim);
+  background: transparent;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 620;
+  transition: color .18s ease, border-color .18s ease, background .18s ease, transform .12s ease;
+}
+
+.header-help span {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--setup-line-strong);
+  border-radius: 50%;
+  font-size: .68rem;
+}
+
+.header-help:hover {
+  color: var(--setup-ink);
+  border-color: var(--setup-line-strong);
+  background: var(--setup-paper);
+}
+
+.header-help:active {
+  transform: translateY(1px);
+}
+
 /* ── 檢查表外框 ── */
 .checklist-wrap {
   display: flex;
@@ -312,6 +348,100 @@ body::before {
 }
 
 /* ── 3. 聲音與連線 ── */
+.key-safety {
+  margin-bottom: .7rem;
+  padding: .85rem .9rem;
+  border: 1px solid #cfe1d6;
+  border-left: 3px solid var(--setup-accent);
+  border-radius: 9px;
+  background: #f3f8f5;
+}
+
+.key-safety-head {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.key-safety-mark {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--setup-accent-deep);
+  background: #dfeee5;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.key-safety-head strong,
+.key-safety-head small {
+  display: block;
+}
+
+.key-safety-head strong {
+  color: var(--setup-ink);
+  font-size: .8rem;
+  font-weight: 680;
+}
+
+.key-safety-head small {
+  margin-top: .12rem;
+  color: var(--setup-dim);
+  font-size: .68rem;
+}
+
+.key-safety-lead,
+.key-safety-note {
+  margin: .65rem 0 .35rem;
+  color: #5d695f;
+  font-size: .7rem;
+  line-height: 1.55;
+}
+
+.key-safety code {
+  padding: .04rem .2rem;
+  border-radius: 4px;
+  color: var(--setup-accent-deep);
+  background: #e3eee7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .66rem;
+}
+
+.key-safety ul {
+  display: grid;
+  gap: .18rem;
+  margin: .35rem 0 .45rem;
+  padding-left: 1.05rem;
+  color: #445249;
+  font-size: .69rem;
+  line-height: 1.45;
+}
+
+.key-safety-note {
+  margin-top: 0;
+  padding-top: .45rem;
+  border-top: 1px solid #d9e7de;
+}
+
+.key-safety-note strong {
+  color: #46554b;
+}
+
+.key-safety > a {
+  color: var(--setup-accent-deep);
+  font-size: .68rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.key-safety > a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .setup-view .key-row {
   margin: 0;
   padding: .78rem .9rem;
@@ -514,6 +644,14 @@ body::before {
   .app-header-inner {
     width: calc(100% - 32px);
     min-height: 62px;
+  }
+
+  .header-help {
+    padding: 0 .65rem;
+  }
+
+  .header-help span {
+    display: none;
   }
 
   .checklist-wrap {

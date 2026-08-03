@@ -2,7 +2,7 @@
 
 ## 需要什麼
 
-Python 3.10 以上。macOS 通常已經內建，先確認一下：
+Python 3.10 以上。macOS 不一定已經安裝符合版本，請先確認：
 
 ```bash
 python3 --version
