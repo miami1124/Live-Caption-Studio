@@ -397,7 +397,7 @@ python scripts/gemini_smoke_test.py
 這個工具的起點是一場真實的需求：在中研院用中文做報告，台下有聽不懂中文的外國學者。實際上台用過之後，才慢慢補成現在這個樣子。
 
 - GitHub：[@miami1124](https://github.com/miami1124)
-- Threads：[@pusung.ai](https://www.threads.net/@pusung.ai)
+- Threads：[@pusung.ai](https://www.threads.net/@pusung.305)
 - Instagram：[@pusung.ai](https://www.instagram.com/pusung.ai/)
 
 歡迎回報使用狀況，特別是**卡住的地方**——那些是我自己一台電腦測不出來的。
